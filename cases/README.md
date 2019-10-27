@@ -8,11 +8,17 @@ To render all cases:
 $ make
 ```
 
+This will create printable STL files `build/*.stl`.
+
 ## Cases Preview (with Printing Supports)
 
 CPU module:
 
 ![CPU module](./doc/img/cpu-body.png)
+
+CPU module top lid:
+
+![CPU top lid](./doc/img/cpu-top-lid.png)
 
 Blue Pill IO module:
 
@@ -22,10 +28,13 @@ Patchbox module:
 
 ![Patchbox](./doc/img/patchbox-body.png)
 
+Bottom lid (for all cases):
+
+![bottom lid](./doc/img/bottom-lid.png)
+
 Universal DIN rail mount (4-relays module variant):
 
 ![4-relays module holders](./doc/img/4relays-holders.png)
-
 
 ## License
 

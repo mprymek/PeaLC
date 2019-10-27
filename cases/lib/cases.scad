@@ -606,7 +606,7 @@ if(make_patchbox_body) {
     render() patchbox_body();
 }
 if(make_patchbox_top_lid) {
-    render() rotate([0,180,0]) patchbox_top_lid();
+    render() translate([ox, 0, oz + tlz]) rotate([0,180,0]) patchbox_top_lid();
 }
 if(make_cpu_body) {
     render() cpu_body();
@@ -615,14 +615,14 @@ if(make_bpio_body) {
     render() bpio_body(with_supports=1);
 }
 if(make_bpio_top_lid) {
-    render() rotate([0,180,0]) top_lid();
+    render() translate([ox, 0, oz + tlz]) rotate([0,180,0]) top_lid();
 }
 if(make_4relays_holders) {
     render() simple_holder(45, thickness=10, hole=3);
     render() translate([0, 20, 0]) mirror([0, 1, 0]) simple_holder(45, thickness=10, hole=3);
 }
 if(make_cpu_top_lid) {
-    render() rotate([0,180,0]) cpu_top_lid();
+    render() translate([ox, 0, oz + tlz]) rotate([0,180,0]) cpu_top_lid();
 }
 if(make_bottom_lid) {
     render() bottom_lid();

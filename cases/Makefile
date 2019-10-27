@@ -16,7 +16,8 @@ lids := cpu-top-lid bpio-top-lid patchbox-top-lid bottom-lid
 parts := $(main_parts) $(lids)
 
 stls := $(foreach part,$(parts),$(build)/$(part).stl)
-pngs := $(foreach part,$(main_parts),$(img)/$(part).png)
+pngs := $(foreach part,$(main_parts),$(img)/$(part).png) \
+		$(img)/cpu-top-lid.png $(img)/bottom-lid.png
 
 .PHONY: all
 all: $(stls) $(pngs)
@@ -64,3 +65,11 @@ camera2 := --camera=12,10,8,27,0,305,208
 
 $(img)/4relays-holders.png: lib/cases.scad
 	$(openscad) -o $@ -D make_4relays_holders=1 $(camera2) $<
+
+camera3 := --camera=10,20,25,50,0,295,200
+
+$(img)/cpu-top-lid.png: lib/cases.scad
+	$(openscad) -o $@ -D make_cpu_top_lid=1 $(camera3) $<
+
+$(img)/bottom-lid.png: lib/cases.scad
+	$(openscad) -o $@ -D make_bottom_lid=1 $(camera3) $<
