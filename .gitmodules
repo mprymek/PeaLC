@@ -1,3 +1,6 @@
 [submodule "firmware/thirdparty/OpenPLC_v3"]
 	path = firmware/thirdparty/OpenPLC_v3
 	url = https://github.com/thiagoralves/OpenPLC_v3.git
+[submodule "firmware/thirdparty/libcanard"]
+	path = firmware/thirdparty/libcanard
+	url = https://github.com/UAVCAN/libcanard.git

@@ -32,6 +32,11 @@ The fetched OpenPLC sources also contain *Matiec compiler* sources in the
 Structured Text programs into C sources but do not link any part of it into the firmware.
 Matiec [is licensed under GPL v.3][matiec-license].
 
+[Libcanard][libcanard] at `thirdparty/libcanard` [is licensed under
+MIT License][libcanard-license].
+
+[libcanard]: https://github.com/UAVCAN/libcanard
+[libcanard-license]: https://github.com/UAVCAN/libcanard/blob/master/LICENSE
 [matiec]: https://bitbucket.org/mjsousa/matiec
 [matiec-license]: https://bitbucket.org/mjsousa/matiec/src/default/COPYING
 [openplc]: https://www.openplcproject.com/
