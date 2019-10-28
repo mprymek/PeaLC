@@ -4,7 +4,7 @@ PeaLC's main purpose is to be the lowest-possible-barrier entry point into
 the world of PLC programming and automation in general. It's here for fun,
 learning, hacking, experimentation, research and joy of tinkering.
 
-It's up to how you will use it. Have fun hacking!
+It's up to you how you will use it. Have fun hacking!
 
 ## "The PeaLC Way"
 
@@ -56,7 +56,8 @@ consequential damages (including, but not limited to, procurement of substitute
 goods or services; loss of use, data, or profits; or business interruption)
 however caused and on any theory of liability, whether in contract, strict
 liability, or tort (including negligence or otherwise) arising in any way out
-of the use of this software, even if advised of the possibility of such damage.
+of the use of this software and other documents, even if advised of the possibility
+of such damage.
 
 If not explicitly stated otherwise, everything in this repo is licensed
 under [The 3-Clause BSD License][bsd-license].
