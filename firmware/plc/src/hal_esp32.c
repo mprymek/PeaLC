@@ -36,6 +36,67 @@ void log_warning2(const char *fmt, ...) { TO_PRINTF }
 void log_info2(const char *fmt, ...) { TO_PRINTF }
 void log_debug2(const char *fmt, ...) { TO_PRINTF }
 
+// ---------------------------------------------- IO ---------------------------
+
+int set_pin_mode_di(int pin) {
+    gpio_pad_select_gpio(pin);
+    if (gpio_set_direction(pin, GPIO_MODE_INPUT) != ESP_OK)
+    {
+        return -1;
+    }
+    if (gpio_pullup_en(pin) != ESP_OK)
+    {
+        return -1;
+    }
+    return 0;
+}
+
+int set_pin_mode_do(int pin) {
+    gpio_pad_select_gpio(pin);
+#ifdef DOS_PINS_INVERTED
+    gpio_set_level(pin, 1);
+#else
+    gpio_set_level(pin, 0);
+#endif
+    if (gpio_set_direction(pin, GPIO_MODE_OUTPUT) != ESP_OK)
+    {
+        return -1;
+    }
+    return 0;
+}
+
+int set_pin_mode_ai(int pin) {
+    log_error("TODO: analog pins not implemented for ESP32");
+    return -1;
+}
+
+int set_pin_mode_ao(int pin) {
+    log_error("TODO: analog pins not implemented for ESP32");
+    return -1;
+}
+
+int set_do_pin_value(int pin, bool value) {
+    if (gpio_set_level(pin, value) != ESP_OK)
+    {
+        return -1;
+    }
+    return 0;
+}
+
+int get_di_pin_value(int pin, bool *value) {
+    *value = gpio_get_level(pin);
+    return 0;
+}
+
+int set_ao_pin_value(int pin, uint16_t value) {
+    log_error("TODO: analog pins not implemented for ESP32");
+    return -1;
+}
+
+int get_ai_pin_value(int pin, uint16_t *value) {
+    log_error("TODO: analog pins not implemented for ESP32");
+    return -1;
+}
 
 // ---------------------------------------------- UI ---------------------------
 

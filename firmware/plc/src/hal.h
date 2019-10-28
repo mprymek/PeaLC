@@ -57,6 +57,17 @@ void log_debug2(const char *format, ...);
 #define log_debug(...) ;
 #endif
 
+// ---------------------------------------------- IO ---------------------------
+
+int set_pin_mode_di(int pin);
+int set_pin_mode_do(int pin);
+int set_pin_mode_ai(int pin);
+int set_pin_mode_ao(int pin);
+
+int set_do_pin_value(int pin, bool value);
+int get_di_pin_value(int pin, bool *value);
+int set_ao_pin_value(int pin, uint16_t value);
+int get_ai_pin_value(int pin, uint16_t *value);
 
 // ---------------------------------------------- UI ---------------------------
 
