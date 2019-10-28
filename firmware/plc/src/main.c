@@ -3,6 +3,7 @@
 #include "io.h"
 #include "plc.h"
 #include "tools.h"
+#include "uavcan_impl.h"
 
 static void main_init();
 static void main_task(void *pvParameters);
@@ -29,10 +30,11 @@ static void main_init()
     }
     PRINTF("\n");
     PRINTF("-----------------------------------------------------\n");
-    PRINTF("%s v. %d.%d (UAVCAN v.0)\n\n", APP_NAME, APP_VER_MAJOR, APP_VER_MINOR);
+    PRINTF("%s v. %d.%d (UAVCAN v.0)\n\n", APP_NAME, APP_VERSION_MAJOR, APP_VERSION_MINOR);
 
     START("ui", ui_init());
     START("io", io_init());
+    START("UAVCAN", uavcan2_init());
     START("plc", plc_init());
 
     PRINTF("-----------------------------------------------------\n");

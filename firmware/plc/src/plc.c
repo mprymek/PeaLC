@@ -25,7 +25,7 @@ int plc_init()
     config_init__();
     connect_buffers();
 
-    if (xTaskCreate(plc_task, "plc", STACK_SIZE_PLC, NULL, configMAX_PRIORITIES - 1, &plc_task_h) != pdPASS)
+    if (xTaskCreate(plc_task, "plc", STACK_SIZE_PLC, NULL, TASK_PRIORITY_PLC, &plc_task_h) != pdPASS)
     {
         log_error("Failed to create plc task.");
         die(DEATH_TASK_CREATION);
@@ -101,6 +101,26 @@ static void update_time()
 #include "LOCATED_VARIABLES.h"
 #undef __LOCATED_VAR
 
+// ---------------------------------------------- remote vars ------------------
+
+uavcan_vals_block_t uavcan_dis_blocks[] = UAVCAN_DIS_BLOCKS;
+uavcan_vals_block_t uavcan_dos_blocks[] = UAVCAN_DOS_BLOCKS;
+uavcan_vals_block_t uavcan_ais_blocks[] = UAVCAN_AIS_BLOCKS;
+uavcan_vals_block_t uavcan_aos_blocks[] = UAVCAN_AOS_BLOCKS;
+
+const uint8_t uavcan_dis_blocks_len = sizeof(uavcan_dis_blocks) / sizeof(uavcan_dis_blocks[0]);
+const uint8_t uavcan_dos_blocks_len = sizeof(uavcan_dos_blocks) / sizeof(uavcan_dos_blocks[0]);
+const uint8_t uavcan_ais_blocks_len = sizeof(uavcan_ais_blocks) / sizeof(uavcan_ais_blocks[0]);
+const uint8_t uavcan_aos_blocks_len = sizeof(uavcan_aos_blocks) / sizeof(uavcan_aos_blocks[0]);
+
+#if 0
+uint8_t mqtt_dis_blocks_len = 0;
+mqtt_vals_block_t mqtt_dis_blocks[] = {};
+
+uint8_t mqtt_ais_blocks_len = 0;
+mqtt_vals_block_t mqtt_ais_blocks[] = {};
+#endif
+
 // ---------------------------------------------- buffers ----------------------
 
 //Booleans
@@ -123,8 +143,16 @@ IEC_UINT *int_output[IO_BUFFER_SIZE];
 //Special Functions
 //IEC_LINT *special_functions[IO_BUFFER_SIZE];
 
+// external vars buffers
+bool ext_dos[EXT_BUFF_SIZE];
+uint16_t ext_aos[EXT_BUFF_SIZE];
+bool ext_dis[EXT_BUFF_SIZE];
+uint16_t ext_ais[EXT_BUFF_SIZE];
+
+
 #define AIDX(i) ((i) / 8)
 #define BIDX(i) ((i) % 8)
+
 
 void connect_buffers()
 {
@@ -144,8 +172,49 @@ void connect_buffers()
 #include "LOCATED_VARIABLES.h"
 #undef __LOCATED_VAR
 
-}
+    uint8_t dis_idx = 0, ais_idx = 0, dos_idx = 0, aos_idx = 0;
 
+    log_debug("\nexternal vars blocks...");
+
+    // connect UAVCAN blocks
+    for (int i = 0; i < uavcan_dis_blocks_len; i++)
+    {
+        uavcan_vals_block_t *block = &uavcan_dis_blocks[i];
+        log_debug("uavcan DI block: node=%d index=%d len=%d -> %d",
+            block->node_id, block->index, block->len, dis_idx);
+        block->digital_vals = &ext_dis[dis_idx];
+        dis_idx += block->len;
+        // TODO: check bounds
+    }
+    for (int i = 0; i < uavcan_ais_blocks_len; i++)
+    {
+        uavcan_vals_block_t *block = &uavcan_ais_blocks[i];
+        log_debug("uavcan AI block: node=%d index=%d len=%d -> %d",
+            block->node_id, block->index, block->len, ais_idx);
+        block->analog_vals = &ext_ais[ais_idx];
+        ais_idx += block->len;
+        // TODO: check bounds
+    }
+    for (int i = 0; i < uavcan_dos_blocks_len; i++)
+    {
+        uavcan_vals_block_t *block = &uavcan_dos_blocks[i];
+        log_debug("uavcan DO block: node=%d index=%d len=%d -> %d",
+            block->node_id, block->index, block->len, dos_idx);
+        block->digital_vals = &ext_dos[dos_idx];
+        dos_idx += block->len;
+        // TODO: check bounds
+    }
+    for (int i = 0; i < uavcan_aos_blocks_len; i++)
+    {
+        uavcan_vals_block_t *block = &uavcan_aos_blocks[i];
+        log_debug("uavcan AO block: node=%d index=%d len=%d -> %d",
+            block->node_id, block->index, block->len, aos_idx);
+        block->analog_vals = &ext_aos[aos_idx];
+        aos_idx += block->len;
+        // TODO: check bounds
+    }
+
+}
 
 // ---------------------------------------------- IO ---------------------------
 
@@ -156,6 +225,7 @@ void update_inputs()
     // local
     for (uint8_t i = 0; i < REMOTE_VARS_INDEX; i++)
     {
+        // digital
         uint8_t a = AIDX(i);
         uint8_t b = BIDX(i);
         IEC_BOOL *bval = bool_input[a][b];
@@ -167,6 +237,7 @@ void update_inputs()
             *bval = val2;
         }
 
+        // analog
         IEC_UINT *uval = int_input[i];
         if (uval != NULL)
         {
@@ -175,6 +246,27 @@ void update_inputs()
         }
     }
 
+    // remote
+    for (uint8_t i = REMOTE_VARS_INDEX; i < IO_BUFFER_SIZE; i++)
+    {
+        // digital
+        uint8_t a = AIDX(i);
+        uint8_t b = BIDX(i);
+        IEC_BOOL *bval = bool_input[a][b];
+        if (bval != NULL)
+        {
+            *bval = ext_dis[i - REMOTE_VARS_INDEX];
+            log_debug("IX%u.%u (R) = %u", a, b, *bval);
+        }
+
+        // analog
+        IEC_UINT *uval = int_input[i];
+        if (uval != NULL)
+        {
+            *uval = ext_ais[i - REMOTE_VARS_INDEX];
+            log_debug("IW%u.%u (R) = %u\n", a, b, *uval);
+        }
+    }
 }
 
 void update_outputs()
@@ -184,6 +276,7 @@ void update_outputs()
     // local
     for (uint8_t i = 0; i < REMOTE_VARS_INDEX; i++)
     {
+        // digital
         uint8_t a = AIDX(i);
         uint8_t b = BIDX(i);
         IEC_BOOL *bval = bool_output[a][b];
@@ -193,6 +286,7 @@ void update_outputs()
             io_set_do(i, *bval);
         }
 
+        // analog
         IEC_UINT *uval = int_output[i];
         if (uval != NULL)
         {
@@ -201,4 +295,25 @@ void update_outputs()
         }
     }
 
+    // remote
+    for (uint8_t i = REMOTE_VARS_INDEX; i < IO_BUFFER_SIZE; i++)
+    {
+        // digital
+        uint8_t a = AIDX(i);
+        uint8_t b = BIDX(i);
+        IEC_BOOL *bval = bool_output[a][b];
+        if (bval != NULL)
+        {
+            log_debug("QX%u.%u (R) = %u\n", a, b, *bval);
+            ext_dos[i - REMOTE_VARS_INDEX] = *bval;
+        }
+
+        // analog
+        IEC_UINT *uval = int_output[i];
+        if (uval != NULL)
+        {
+            log_debug("QW%u.%u (R) = %u\n", a, b, *uval);
+            ext_aos[i - REMOTE_VARS_INDEX] = *uval;
+        }
+    }
 }

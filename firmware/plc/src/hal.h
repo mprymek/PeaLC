@@ -73,8 +73,21 @@ int get_ai_pin_value(int pin, uint16_t *value);
 
 int ui_init(void);
 void ui_plc_tick(void);
+void ui_can_rx();
+void ui_can_tx();
 void ui_set_status(const char *status);
 
+// ---------------------------------------------- CAN --------------------------
+
+typedef enum {
+    CANBS_ERR_ACTIVE = 0,
+    CANBS_ERR_PASSIVE,
+    CANBS_BUS_OFF,
+} can_bus_state_t;
+
+int can2_init(void);
+
+extern volatile can_bus_state_t can_bus_state;
 
 // ---------------------------------------------- misc -------------------------
 
@@ -84,6 +97,7 @@ typedef enum
     DEATH_INIT_FAILED,
     DEATH_UNREACHABLE_REACHED,
     DEATH_TASK_CREATION,
+    DEATH_CAN_DRIVER_ERROR,
 } death_reasons_t;
 
 void die(uint8_t reason);

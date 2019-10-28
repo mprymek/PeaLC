@@ -26,15 +26,41 @@
 #define AIS_PINS {}
 #define AOS_NUM 0
 #define AOS_PINS {}
+// CAN
+#define CAN_RX_PIN 23
+#define CAN_TX_PIN 22
 
 //#define WITH_OLED
 
+// ---------------------------------------------- communication config ---------
+
+#define APP_NAME "PeaPLC-CPU"
+#define APP_VERSION_MAJOR 0
+#define APP_VERSION_MINOR 1
+
+// how often to transmit node status message [ms]
+#define UAVCAN_STATUS_PERIOD 1000
+
+// how often to run uavcan RX/TX [ms]
+#define UAVCAN_RXTX_PERIOD 200
+
+// ---------------------------------------------- remote blocks ----------------
+
+#define UAVCAN_DIS_BLOCKS { \
+        {.node_id = 51, .index = 0, .len = 1}, \
+    }
+#define UAVCAN_DOS_BLOCKS { \
+        {.node_id = 51, .index = 0, .len = 1}, \
+    }
+#define UAVCAN_AIS_BLOCKS {}
+#define UAVCAN_AOS_BLOCKS {}
+
 // ---------------------------------------------- defaults & internal ----------
 #define STACK_SIZE_PLC (configMINIMAL_STACK_SIZE + 3074)
+#define STACK_SIZE_UAVCAN (configMINIMAL_STACK_SIZE + 3072)
 
-#define APP_NAME UAVCAN_APP_NAME
-#define APP_VER_MAJOR UAVCAN_APP_VER_MAJOR
-#define APP_VER_MINOR UAVCAN_APP_VER_MINOR
+#define TASK_PRIORITY_PLC (configMAX_PRIORITIES - 1)
+#define TASK_PRIORITY_UAVCAN (tskIDLE_PRIORITY + 1)
 
 #ifdef STATUS_LEDS_INVERTED
 #define STATUS_LED_VALUE(x) (!(x))
@@ -45,5 +71,15 @@
 #ifndef UI_MIN_PLC_TICK_DELAY
 // blink at most once per this period [ms]
 #define UI_MIN_PLC_TICK_DELAY 1000
+#endif
+
+#ifndef UI_MIN_CAN_RX_OK_DELAY
+// blink at most once per this period [ms]
+#define UI_MIN_CAN_RX_OK_DELAY 100
+#endif
+
+#ifndef UI_MIN_CAN_TX_OK_DELAY
+// blink at most once per this period [ms]
+#define UI_MIN_CAN_TX_OK_DELAY 100
 #endif
 
