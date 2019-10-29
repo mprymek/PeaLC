@@ -1,0 +1,3 @@
+@union
+DigitalValues digital_values
+AnalogValues analog_values

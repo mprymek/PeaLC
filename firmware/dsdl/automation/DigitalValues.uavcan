@@ -1,0 +1,5 @@
+# Shoud be dynamic array but dynamic bool arrays compilation is broken.
+# see: https://github.com/UAVCAN/libcanard/issues/135
+# 32+6 bits fit into one packet for all contexts it is used in
+uint6 values_len
+bool[32] values

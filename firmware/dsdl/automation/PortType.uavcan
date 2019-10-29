@@ -1,0 +1,3 @@
+bool INPUT = false
+bool OUTPUT = true
+bool port_type

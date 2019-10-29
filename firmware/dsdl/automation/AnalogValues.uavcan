@@ -1,0 +1,4 @@
+# Shoud be dynamic array but I got coredumps with dynamic array decoding.
+# 32+6 bits fit into one packet for all contexts it is used in
+uint2 values_len
+uint16[2] values

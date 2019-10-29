@@ -1,0 +1,15 @@
+PortType port_type
+uint8 index
+ValueType vals_type
+uint6 length
+
+---
+
+uint2 OK = 0
+uint2 BAD_ARGUMENT = 1
+uint2 HW_ERROR = 2
+uint2 result
+
+PortType port_type
+uint8  index
+Values values
