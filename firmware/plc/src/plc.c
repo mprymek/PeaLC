@@ -6,6 +6,9 @@
 #include "plc.h"
 #include "ui.h"
 
+// "exported" to Matiec-compiled PLC program
+IEC_TIME __CURRENT_TIME;
+
 static void connect_buffers(void);
 static void plc_task(void *pvParameters);
 static void update_time(void);

@@ -14,8 +14,6 @@ void config_init__(void);
 void config_run__(unsigned long tick);
 // "imported"
 extern unsigned long long common_ticktime__;
-// "exported"
-IEC_TIME __CURRENT_TIME;
 
 // ---------------------------------------------- remote vars ------------------
 
