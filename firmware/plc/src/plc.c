@@ -4,6 +4,7 @@
 #include "hal.h"
 #include "io.h"
 #include "plc.h"
+#include "ui.h"
 
 static void connect_buffers(void);
 static void plc_task(void *pvParameters);

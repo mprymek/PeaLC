@@ -3,6 +3,7 @@
 #include "io.h"
 #include "plc.h"
 #include "tools.h"
+#include "ui.h"
 #include "uavcan_impl.h"
 
 static void main_init();

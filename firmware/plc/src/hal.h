@@ -69,14 +69,6 @@ int get_di_pin_value(int pin, bool *value);
 int set_ao_pin_value(int pin, uint16_t value);
 int get_ai_pin_value(int pin, uint16_t *value);
 
-// ---------------------------------------------- UI ---------------------------
-
-int ui_init(void);
-void ui_plc_tick(void);
-void ui_can_rx();
-void ui_can_tx();
-void ui_set_status(const char *status);
-
 // ---------------------------------------------- CAN --------------------------
 
 typedef enum {

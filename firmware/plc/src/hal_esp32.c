@@ -14,6 +14,7 @@
 #include "app_config.h"
 #include "uavcan_impl.h"
 #include "hal.h"
+#include "ui.h"
 #include "tools.h"
 
 // ---------------------------------------------- logging ----------------------
@@ -102,85 +103,6 @@ int set_ao_pin_value(int pin, uint16_t value) {
 int get_ai_pin_value(int pin, uint16_t *value) {
     log_error("TODO: analog pins not implemented for ESP32");
     return -1;
-}
-
-// ---------------------------------------------- UI ---------------------------
-
-int ui_init()
-{
-    uint8_t pins[] = {
-#ifdef CAN_RX_OK_PIN
-        CAN_RX_OK_PIN,
-#endif
-#ifdef CAN_TX_OK_PIN
-        CAN_TX_OK_PIN,
-#endif
-#ifdef PLC_TICK_PIN
-        PLC_TICK_PIN,
-#endif
-#ifdef WIFI_ERR_PIN
-        WIFI_ERR_PIN,
-#endif
-    };
-
-    for (int i = 0; i < sizeof(pins); i++)
-    {
-        gpio_pad_select_gpio(pins[i]);
-        if (gpio_set_direction(pins[i], GPIO_MODE_OUTPUT) != ESP_OK)
-        {
-            return -1;
-        }
-        if (gpio_set_level(pins[i], STATUS_LED_VALUE(true)) != ESP_OK)
-        {
-            return -2;
-        }
-    }
-
-    return 0;
-}
-
-void ui_set_status(const char *status) {
-#ifdef WITH_OLED
-    oled_plc_tick();
-#else
-    PRINTF("status: %s\n", status);
-#endif
-}
-
-void ui_plc_tick()
-{
-#ifdef WITH_OLED
-    oled_plc_tick();
-#endif
-#ifdef PLC_TICK_PIN
-    MAX_ONCE_PER(UI_MIN_PLC_TICK_DELAY, {
-        static bool state = false;
-        state = !state;
-        gpio_set_level(PLC_TICK_PIN, state);
-    });
-#endif
-}
-
-void ui_can_rx()
-{
-#ifdef CAN_RX_OK_PIN
-    MAX_ONCE_PER(UI_MIN_CAN_RX_OK_DELAY, {
-        static bool state = false;
-        state = !state;
-        gpio_set_level(CAN_RX_OK_PIN, state);
-    });
-#endif
-}
-
-void ui_can_tx()
-{
-#ifdef CAN_TX_OK_PIN
-    MAX_ONCE_PER(UI_MIN_CAN_TX_OK_DELAY, {
-        static bool state = false;
-        state = !state;
-        gpio_set_level(CAN_TX_OK_PIN, state);
-    });
-#endif
 }
 
 
