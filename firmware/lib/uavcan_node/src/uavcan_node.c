@@ -285,7 +285,6 @@ __attribute__((weak)) void uavcan_user_on_transfer_received(CanardInstance *ins,
 
 static void handle_NodeStatus(CanardInstance *ins, CanardRxTransfer *transfer)
 {
-    uint8_t buff[UAVCAN_PROTOCOL_NODESTATUS_MAX_SIZE];
     uavcan_protocol_NodeStatus msg;
 
     int32_t res = uavcan_protocol_NodeStatus_decode(transfer,
