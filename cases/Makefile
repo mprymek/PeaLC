@@ -1,9 +1,6 @@
 # path to openscad
 openscad = openscad
 
-# make command
-make = make
-
 # build dir path
 build = ./build
 
@@ -25,6 +22,9 @@ all: $(stls) $(pngs)
 .PHONY: clean
 clean:
 	-rm $(stls) $(pngs)
+
+.PHONY: pre-push
+pre-push: all
 
 $(build)/cpu-body.stl: lib/cases.scad
 	$(openscad) -o $@ -D make_cpu_body=1 $<

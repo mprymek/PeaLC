@@ -1,5 +1,4 @@
-# platformio path
-pio = pio
+include ../../config.mk
 
 openplc_dir = ../thirdparty/OpenPLC_v3
 matiec_dir_abs = $(realpath $(openplc_dir)/utils/matiec_src)
@@ -7,6 +6,8 @@ matiec = $(matiec_dir_abs)/iec2c
 
 plc_prog_src_dir = plc-prog-src
 plc_program_abs = $(realpath $(plc_program))
+
+envs = esp32dev lolin32
 
 .PHONY: all
 all: build
@@ -33,12 +34,22 @@ prog-clean:
 
 .PHONY: build
 build: prog-build
-	$(pio) run -e esp32dev
+	$(pio) run
 
 .PHONY: upload
 upload:
-	$(pio) run -e esp32dev -t upload
+	$(pio) run -t upload
 
 .PHONY: clean
 clean: prog-clean
-	$(pio) run -e esp32dev -t clean
+	$(pio) run -t clean
+
+.PHONY: format
+format:
+	find include lib src test \
+		-iname *.h -o -iname *.cpp -o -iname *.c \
+	| xargs $(clang-format) -style=file -i
+
+.PHONY: pre-push
+pre-push: format
+	$(pio) run $(foreach env,$(envs),-e $(env) )

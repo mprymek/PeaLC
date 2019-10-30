@@ -35,6 +35,11 @@ Matiec [is licensed under GPL v.3][matiec-license].
 [Libcanard][libcanard] at `thirdparty/libcanard` [is licensed under
 MIT License][libcanard-license].
 
+`.clang-format` file is taken from [Linux sources][clang-format] and is licensed under
+[GNU GPL 2][gpl2].
+
+[clang-format]: https://github.com/torvalds/linux/blob/master/.clang-format
+[gpl2]: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 [libcanard]: https://github.com/UAVCAN/libcanard
 [libcanard-license]: https://github.com/UAVCAN/libcanard/blob/master/LICENSE
 [matiec]: https://bitbucket.org/mjsousa/matiec
