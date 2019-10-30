@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdbool.h>
 
 #define IO_OK 0
 #define IO_HW_ERROR 1

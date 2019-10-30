@@ -1,5 +1,3 @@
-#include <iec_types.h>
-
 #ifdef __cplusplus
 extern "C"
 {

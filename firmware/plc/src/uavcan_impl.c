@@ -56,7 +56,7 @@ void uavcan_task(void *pvParameters)
 {
     TickType_t last_wake = xTaskGetTickCount();
 
-    // Terrible hack! Should wait for plc initialization
+    // TODO: Terrible hack! Should wait for plc initialization
     vTaskDelay(pdMS_TO_TICKS(1000));
 
     for (;;)
