@@ -45,3 +45,10 @@
 
 #define TASK_PRIORITY_PLC (configMAX_PRIORITIES - 1)
 #define TASK_PRIORITY_UAVCAN (tskIDLE_PRIORITY + 1)
+
+// ---------------------------------------------- temperature sensors ----------
+
+// temperature read interval [ms]
+#ifndef TEMPS_READ_INTERVAL
+#define TEMPS_READ_INTERVAL 60000
+#endif
