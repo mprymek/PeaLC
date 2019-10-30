@@ -17,6 +17,8 @@ uint8_t io_set_ao(uint8_t index, uint16_t value);
 uint8_t io_get_di(uint8_t index, bool *value);
 uint8_t io_get_ai(uint8_t index, uint16_t *value);
 
+extern uint16_t virt_ais[];
+
 #ifdef __cplusplus
 }
 #endif

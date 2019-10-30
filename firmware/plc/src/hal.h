@@ -1,3 +1,6 @@
+#include <stdint.h>
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -21,6 +24,24 @@ void log_debug2(const char *format, ...);
 #ifdef ESP32
 #define PRINTF(format, ...) \
     printf(format, ##__VA_ARGS__)
+#endif
+
+#if defined(__AVR__)
+#define DBG_SERIAL Serial
+#endif
+
+#if defined(STM32F1)
+#define DBG_SERIAL Serial3
+#endif
+
+#if defined(STM32F1) || defined(__AVR__)
+#define PRINTS(x) prints(x)
+#define PRINTU(x) printu(x)
+#define PRINTX(x) printx(x)
+
+void prints(const char *s);
+void printu(uint16_t u);
+void printx(uint16_t x);
 #endif
 
 #define LOGLEVEL_NOTHING 0
@@ -57,6 +78,7 @@ void log_debug2(const char *format, ...);
 #define log_debug(...) ;
 #endif
 
+
 // ---------------------------------------------- IO ---------------------------
 
 int set_pin_mode_di(int pin);
@@ -69,6 +91,7 @@ int get_di_pin_value(int pin, bool *value);
 int set_ao_pin_value(int pin, uint16_t value);
 int get_ai_pin_value(int pin, uint16_t *value);
 
+
 // ---------------------------------------------- CAN --------------------------
 
 typedef enum {
@@ -80,6 +103,7 @@ typedef enum {
 int can2_init(void);
 
 extern volatile can_bus_state_t can_bus_state;
+
 
 // ---------------------------------------------- misc -------------------------
 

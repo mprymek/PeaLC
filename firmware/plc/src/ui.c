@@ -1,7 +1,19 @@
+#if defined(ARDUINO)
+// because of pin names like PC13 etc.
+#include <Arduino.h>
+#endif
+
 #include "app_config.h"
 #include "hal.h"
 #include "tools.h"
 #include "ui.h"
+
+
+#ifdef STATUS_LEDS_INVERTED
+#define STATUS_LED_VALUE(x) (!(x))
+#else
+#define STATUS_LED_VALUE(x) (x)
+#endif
 
 
 int ui_init()
@@ -32,7 +44,9 @@ int ui_init()
 }
 
 void ui_set_status(const char *status) {
+#if defined(PRINTF)
     PRINTF("status: %s\n", status);
+#endif
 }
 
 void ui_plc_tick()

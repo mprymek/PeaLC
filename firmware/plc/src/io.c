@@ -2,6 +2,10 @@
 #include "hal.h"
 #include "io.h"
 
+#if defined(ARDUINO)
+// because of pin names like PC13 etc.
+#include <Arduino.h>
+#endif
 
 static const uint8_t DI_PIN[] = DIS_PINS;
 static const uint8_t DO_PIN[] = DOS_PINS;
@@ -12,6 +16,8 @@ static const uint8_t AO_PIN[] = AOS_PINS;
 #define DOS_NUM (sizeof(DO_PIN) / sizeof(DO_PIN[0]))
 #define AIS_NUM (sizeof(AI_PIN) / sizeof(AI_PIN[0]))
 #define AOS_NUM (sizeof(AO_PIN) / sizeof(AO_PIN[0]))
+
+uint16_t virt_ais[VIRT_AIS_NUM];
 
 #ifdef DOS_PINS_INVERTED
 #define DO_PIN_VALUE(x) (!(x))
@@ -116,7 +122,11 @@ uint8_t io_get_ai(uint8_t index, uint16_t *value)
 
     if (index >= AIS_NUM)
     {
-        return IO_DOES_NOT_EXIST;
+        index -= AIS_NUM;
+        if (index >= VIRT_AIS_NUM) {
+            return IO_DOES_NOT_EXIST;
+        }
+        return virt_ais[index];
     }
     if (get_ai_pin_value(AI_PIN[index], &value2))
     {
