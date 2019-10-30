@@ -74,7 +74,7 @@ void uavcan_update()
     uint64_t now_us = uavcan_uptime_usec();
 
     // should be called about once per second
-    uint64_t last_cleanup = 0;
+    static uint64_t last_cleanup = 0;
     if (now_us - last_cleanup > CANARD_RECOMMENDED_STALE_TRANSFER_CLEANUP_INTERVAL_USEC)
     {
         canardCleanupStaleTransfers(&g_canard, uavcan_uptime_usec());
