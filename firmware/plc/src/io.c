@@ -41,6 +41,7 @@ int io_init()
     }
     for (uint8_t i = 0; i < DOS_NUM; i++)
     {
+        set_do_pin_value(DO_PIN[i], DO_PIN_VALUE(false));
         if ((res = set_pin_mode_do(DO_PIN[i])))
         {
             return res;
