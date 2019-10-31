@@ -62,7 +62,7 @@ void uavcan_task(void *pvParameters)
 	// We must wait for PLC buffers initialization
 	// TODO: We are not broadcasting node status and are not responding to NodeInfo
 	//       during this period.
-	if (!WAIT_BIT(PLC_INITIALIZED_BIT)) {
+	if (!WAIT_BITS(PLC_INITIALIZED_BIT)) {
 		die(DEATH_INITIALIZATION_TIMEOUT);
 	}
 

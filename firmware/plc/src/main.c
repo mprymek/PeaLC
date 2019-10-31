@@ -34,6 +34,8 @@ static void main_init()
 	START("locks", locks_init());
 	START("ui", ui_init());
 	START("io", io_init());
+	// plc buffers must be initialized before UAVCAN is started
+	START("plc", plc_init());
 	START("UAVCAN", uavcan2_init());
 #ifdef WITH_WIFI
 	START("wifi", wifi_init());
@@ -41,10 +43,10 @@ static void main_init()
 #ifdef WITH_MQTT
 	START("mqtt", mqtt_init());
 #endif
-	START("plc", plc_init());
 
 	PRINTF("-----------------------------------------------------\n");
-	ui_set_status("running");
+
+	plc_set_state(PLC_STATE_RUNNING);
 }
 
 static void main_task(void *pvParameters)

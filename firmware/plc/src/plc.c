@@ -20,7 +20,6 @@ static void update_outputs(void);
 static void update_inputs(void);
 
 static TaskHandle_t plc_task_h = NULL;
-static bool running = true;
 static uint64_t tick = 0;
 
 #define BILLION 1000000000
@@ -28,8 +27,6 @@ static uint64_t tick = 0;
 
 int plc_init()
 {
-	plc_set_state(PLC_STATE_STARTING);
-
 	// initialize PLC program
 	config_init__();
 	connect_buffers();
@@ -47,14 +44,16 @@ int plc_init()
 
 static void plc_task(void *pvParameters)
 {
-	TickType_t last_wake = xTaskGetTickCount();
+	if (!WAIT_BITS(PLC_RUNNING_BIT)) {
+		die(DEATH_INITIALIZATION_TIMEOUT);
+	}
 
-	plc_set_state(PLC_STATE_RUNNING);
+	TickType_t last_wake = xTaskGetTickCount();
 
 	for (;;) {
 		update_time();
 
-		if (running) {
+		if (IS_BIT_SET(PLC_RUNNING_BIT)) {
 			ui_plc_tick();
 #if LOGLEVEL >= LOGLEVEL_INFO
 			float now_f =
@@ -89,14 +88,6 @@ static void plc_task(void *pvParameters)
 void plc_set_state(plc_state_t state)
 {
 	switch (state) {
-	case PLC_STATE_STARTING:
-#ifdef WITH_MQTT
-		mqtt_publish4(MQTT_STATUS_TOPIC, MQTT_STATUS_STARTING_MSG, 1,
-			      1);
-#endif
-		uavcan_node_status.mode =
-			UAVCAN_PROTOCOL_NODESTATUS_MODE_INITIALIZATION;
-		break;
 	case PLC_STATE_RUNNING:
 		xEventGroupSetBits(global_event_group, PLC_RUNNING_BIT);
 		ui_set_status("running");
@@ -105,7 +96,6 @@ void plc_set_state(plc_state_t state)
 #endif
 		uavcan_node_status.mode =
 			UAVCAN_PROTOCOL_NODESTATUS_MODE_OPERATIONAL;
-		running = true;
 		break;
 	case PLC_STATE_PAUSED:
 		xEventGroupClearBits(global_event_group, PLC_RUNNING_BIT);
@@ -115,7 +105,6 @@ void plc_set_state(plc_state_t state)
 #endif
 		uavcan_node_status.mode =
 			UAVCAN_PROTOCOL_NODESTATUS_MODE_MAINTENANCE;
-		running = false;
 		break;
 	default:
 		log_error("invalid plc state: %d", state);

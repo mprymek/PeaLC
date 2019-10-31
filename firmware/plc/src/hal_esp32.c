@@ -367,6 +367,10 @@ int wifi_init()
 		  "esp_wifi_set_config");
 	RET_CHECK(esp_wifi_start(), "esp_wifi_start");
 
+	if (!WAIT_BITS(WIFI_READY_BIT)) {
+		die(DEATH_INITIALIZATION_TIMEOUT);
+	}
+
 	return 0;
 }
 
@@ -433,6 +437,10 @@ int mqtt_init()
 
 	RET_CHECK(esp_mqtt_client_start(mqtt_client), "mqtt client start");
 
+	if (!WAIT_BITS(MQTT_READY_BIT)) {
+		die(DEATH_INITIALIZATION_TIMEOUT);
+	}
+
 	return 0;
 }
 
@@ -451,6 +459,8 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 	esp_mqtt_client_handle_t client = event->client;
 	switch (event->event_id) {
 	case MQTT_EVENT_CONNECTED:
+		mqtt_publish4(MQTT_STATUS_TOPIC, MQTT_STATUS_STARTING_MSG, 1,
+			      1);
 		esp_mqtt_client_subscribe(client, MQTT_SUBTOPIC("#"), 1);
 #ifdef MQTT_WALL_CLOCK_TOPIC
 		esp_mqtt_client_subscribe(client, MQTT_WALL_CLOCK_TOPIC, 0);
@@ -579,6 +589,10 @@ See https://github.com/espressif/esp-idf/issues/2975 - locking added to ESP-IDF 
 */
 int mqtt_publish4(const char *topic, const char *data, int qos, int retain)
 {
+	if (!publish_mutex) {
+		log_warning("mqtt publish before mqtt init");
+		return -3;
+	}
 	if (xSemaphoreTake(publish_mutex,
 			   pdMS_TO_TICKS(MQTT_MAX_PUBLISH_WAIT))) {
 		int res = esp_mqtt_client_publish(mqtt_client, topic, data, 0,

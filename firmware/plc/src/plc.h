@@ -24,7 +24,6 @@ typedef struct {
 } uavcan_vals_block_t;
 
 typedef enum {
-	PLC_STATE_STARTING,
 	PLC_STATE_RUNNING,
 	PLC_STATE_PAUSED,
 } plc_state_t;

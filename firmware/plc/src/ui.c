@@ -45,9 +45,7 @@ int ui_init()
 
 void ui_set_status(const char *status)
 {
-#if defined(PRINTF)
-	PRINTF("status: %s\n", status);
-#endif
+	log_debug("status: %s", status);
 }
 
 void ui_plc_tick()
