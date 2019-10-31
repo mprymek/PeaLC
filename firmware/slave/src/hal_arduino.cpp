@@ -143,7 +143,7 @@ uint32_t uptime_msec()
 #if LOGLEVEL >= LOGLEVEL_ERROR
 void uavcan_error(const char *fmt, ...)
 {
-	// TODO: printf args...
+	// NOTE: We don't have printf -> print at least fmt. Something is better than nothing...
 	PRINTS(fmt);
 }
 #else
