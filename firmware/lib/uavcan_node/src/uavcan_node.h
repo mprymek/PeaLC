@@ -41,7 +41,7 @@ int16_t uavcan_send_request(
 
 
 // globals
-extern uavcan_protocol_NodeStatus uavcan_node_status;
+extern volatile uavcan_protocol_NodeStatus uavcan_node_status;
 extern uavcan_protocol_GetNodeInfoResponse uavcan_node_info;
 
 

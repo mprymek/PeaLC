@@ -15,7 +15,7 @@
 #endif
 
 // globals
-uavcan_protocol_NodeStatus uavcan_node_status;
+volatile uavcan_protocol_NodeStatus uavcan_node_status;
 uavcan_protocol_GetNodeInfoResponse uavcan_node_info;
 
 CanardInstance g_canard;                                   //The library instance
