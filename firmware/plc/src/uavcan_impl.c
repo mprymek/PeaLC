@@ -72,9 +72,9 @@ void uavcan_task(void *pvParameters)
 		// ask for digital inputs
 		for (uint8_t i = 0; i < uavcan_dis_blocks_len; i++) {
 			block = &uavcan_dis_blocks[i];
-			log_debug("<- DI%d-%d@%d = ?", block->index,
-				  block->index + block->len - 1,
-				  block->node_id);
+			log_com_debug("<- DI%d-%d@%d = ?", block->index,
+				      block->index + block->len - 1,
+				      block->node_id);
 			if (automation_send_get_dis(block->node_id,
 						    block->index,
 						    block->len) < 0) {
@@ -86,9 +86,9 @@ void uavcan_task(void *pvParameters)
 		// ask for analog inputs
 		for (uint8_t i = 0; i < uavcan_ais_blocks_len; i++) {
 			block = &uavcan_ais_blocks[i];
-			log_debug("<- AI%d-%d@%d = ?", block->index,
-				  block->index + block->len - 1,
-				  block->node_id);
+			log_com_debug("<- AI%d-%d@%d = ?", block->index,
+				      block->index + block->len - 1,
+				      block->node_id);
 			if (automation_send_get_ais(block->node_id,
 						    block->index,
 						    block->len) < 0) {
@@ -214,8 +214,8 @@ void uavcan_user_on_transfer_received(CanardInstance *ins,
 void uavcan_on_node_status(uint8_t source_node_id,
 			   uavcan_protocol_NodeStatus *node_status)
 {
-	log_debug("Node %d uptime = %d", source_node_id,
-		  node_status->uptime_sec);
+	log_com_debug("Node %d uptime = %d", source_node_id,
+		      node_status->uptime_sec);
 }
 
 void automation_on_get_dis_response(uint8_t source_node_id, uint8_t index,

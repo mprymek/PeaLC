@@ -76,6 +76,14 @@ void printx(uint16_t x);
 #define log_debug(...) ;
 #endif
 
+#ifdef WITHOUT_COM_DEBUG
+#define log_com_debug(...)                                                     \
+	{                                                                      \
+	}
+#else
+#define log_com_debug log_debug
+#endif
+
 // ---------------------------------------------- IO ---------------------------
 
 int set_pin_mode_di(int pin);

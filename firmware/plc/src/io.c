@@ -68,7 +68,7 @@ uint8_t io_set_do(uint8_t index, bool value)
 	if (index >= DOS_NUM) {
 		return IO_DOES_NOT_EXIST;
 	}
-	log_debug("DO%d (pin %d) := %d", index, DO_PIN[index], value);
+	log_com_debug("DO%d (pin %d) := %d", index, DO_PIN[index], value);
 	if (set_do_pin_value(DO_PIN[index], DO_PIN_VALUE(value))) {
 		return IO_HW_ERROR;
 	}
@@ -80,7 +80,7 @@ uint8_t io_set_ao(uint8_t index, uint16_t value)
 	if (index >= AOS_NUM) {
 		return IO_DOES_NOT_EXIST;
 	}
-	log_debug("AO%d (pin %d) = %u", index, AO_PIN[index], value);
+	log_com_debug("AO%d (pin %d) = %u", index, AO_PIN[index], value);
 	if (set_ao_pin_value(AO_PIN[index], AO_PIN_VALUE(value))) {
 		return IO_HW_ERROR;
 	}
@@ -98,7 +98,7 @@ uint8_t io_get_di(uint8_t index, bool *value)
 		return IO_HW_ERROR;
 	}
 	*value = DI_PIN_VALUE(value2);
-	log_debug("DI%d (pin %d) = %d", index, DI_PIN[index], value2);
+	log_com_debug("DI%d (pin %d) = %d", index, DI_PIN[index], value2);
 	return IO_OK;
 }
 
@@ -117,6 +117,6 @@ uint8_t io_get_ai(uint8_t index, uint16_t *value)
 		return IO_HW_ERROR;
 	}
 	*value = AI_PIN_VALUE(value2);
-	log_debug("AI%d (pin %d) = %u", index, AI_PIN[index], value2);
+	log_com_debug("AI%d (pin %d) = %u", index, AI_PIN[index], value2);
 	return IO_OK;
 }

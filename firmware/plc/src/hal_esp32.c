@@ -221,7 +221,11 @@ static void can_watch_task(void *pvParameters)
 				log_error("CAN: TX failed");
 			}
 			if (alerts & CAN_ALERT_RX_QUEUE_FULL) {
-				log_error("CAN: RX queue full");
+				// UAVCAN is not fully functional until PLC is initialized
+				// => supress this message until then.
+				if (IS_BIT_SET(PLC_INITIALIZED_BIT)) {
+					log_error("CAN: RX queue full");
+				}
 			}
 			if (alerts & CAN_ALERT_ERR_PASS) {
 				log_error("CAN: entered error passive state");
@@ -290,7 +294,7 @@ int uavcan_can_rx(CanardCANFrame *frame)
 	memcpy(frame->data, esp_msg.data, esp_msg.data_length_code);
 	frame->data_len = esp_msg.data_length_code;
 
-#if LOGLEVEL >= LOGLEVEL_DEBUG
+#if !defined(WITHOUT_COM_DEBUG) && (LOGLEVEL >= LOGLEVEL_DEBUG)
 	print_frame("->", frame);
 #endif
 
@@ -322,7 +326,7 @@ int uavcan_can_tx(const CanardCANFrame *frame)
 	memcpy(esp_msg.data, frame->data, frame->data_len);
 	esp_msg.data_length_code = frame->data_len;
 
-#if LOGLEVEL >= LOGLEVEL_DEBUG
+#if !defined(WITHOUT_COM_DEBUG) && (LOGLEVEL >= LOGLEVEL_DEBUG)
 	print_frame("<-", frame);
 #endif
 
@@ -341,8 +345,6 @@ int uavcan_can_tx(const CanardCANFrame *frame)
 #ifdef WITH_WIFI
 
 static esp_err_t wifi_event_handler(void *ctx, system_event_t *event);
-
-const static int WIFI_CONNECTED_BIT = BIT0;
 
 int wifi_init()
 {
@@ -365,13 +367,6 @@ int wifi_init()
 		  "esp_wifi_set_config");
 	RET_CHECK(esp_wifi_start(), "esp_wifi_start");
 
-	PRINTF("connecting ");
-	if (!WAIT_BIT(WIFI_READY_BIT)) {
-		return -1;
-	}
-
-	ui_wifi_ok(true);
-
 	return 0;
 }
 
@@ -382,9 +377,11 @@ static esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
 		esp_wifi_connect();
 		break;
 	case SYSTEM_EVENT_STA_GOT_IP:
+		ui_wifi_ok(true);
 		xEventGroupSetBits(global_event_group, WIFI_READY_BIT);
 		break;
 	case SYSTEM_EVENT_STA_DISCONNECTED:
+		ui_wifi_ok(false);
 		log_warning("wifi disconnected");
 		// TODO: check error
 		esp_wifi_connect();
@@ -428,12 +425,13 @@ int mqtt_init()
 	if ((mqtt_client = esp_mqtt_client_init(&mqtt_cfg)) == NULL) {
 		return -2;
 	}
-	RET_CHECK(esp_mqtt_client_start(mqtt_client), "mqtt client start");
 
-	PRINTF("connecting ");
-	if (!WAIT_BIT(MQTT_READY_BIT)) {
-		return -1;
+	// wait for wifi
+	if (!WAIT_BITS(WIFI_READY_BIT)) {
+		die(DEATH_INITIALIZATION_TIMEOUT);
 	}
+
+	RET_CHECK(esp_mqtt_client_start(mqtt_client), "mqtt client start");
 
 	return 0;
 }
@@ -454,10 +452,13 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 	switch (event->event_id) {
 	case MQTT_EVENT_CONNECTED:
 		esp_mqtt_client_subscribe(client, MQTT_SUBTOPIC("#"), 1);
+#ifdef MQTT_WALL_CLOCK_TOPIC
+		esp_mqtt_client_subscribe(client, MQTT_WALL_CLOCK_TOPIC, 0);
+#endif
 		break;
 	case MQTT_EVENT_SUBSCRIBED:
-		log_debug("mqtt subscribed");
 		xEventGroupSetBits(global_event_group, MQTT_READY_BIT);
+		log_debug("mqtt subscribed");
 		ui_mqtt_ok(true);
 		break;
 	case MQTT_EVENT_ERROR:
@@ -485,6 +486,18 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 
 static void mqtt_handle_msg(esp_mqtt_event_handle_t event)
 {
+#ifdef MQTT_WALL_CLOCK_TOPIC
+	if (is_topic(event, MQTT_WALL_CLOCK_TOPIC,
+		     sizeof(MQTT_WALL_CLOCK_TOPIC))) {
+		xEventGroupSetBits(global_event_group, GOT_CLOCK_BIT);
+		if (hal_parse_time(event->data, event->data_len,
+				   (uint8_t *)&wc_hrs, (uint8_t *)&wc_mins,
+				   (uint8_t *)&wc_secs)) {
+			log_error("Invalid wall clock time format");
+		}
+		return;
+	}
+#endif
 	// PLC pause
 	if (is_topic(event, MQTT_PAUSE_TOPIC, sizeof(MQTT_PAUSE_TOPIC))) {
 		if (event->data_len > 0) {
@@ -504,6 +517,51 @@ static void mqtt_handle_msg(esp_mqtt_event_handle_t event)
 		}
 		return;
 	}
+
+#if 0
+		// set DIx
+		for (int i = 0; i < mqtt_dis_blocks_len; i++) {
+			if (strncmp(event->topic, mqtt_dis_blocks[i].topic,
+				    event->topic_len) == 0) {
+				bool *val = mqtt_dis_blocks[i].digital_val;
+				// We must check pointer because variables could not be glued already.
+				if (val) {
+					*val = (event->data_len == 1 &&
+						event->data[0] == '1');
+				}
+				return;
+			}
+		}
+
+		// set AIx
+		for (int i = 0; i < mqtt_ais_blocks_len; i++) {
+			if (strncmp(event->topic, mqtt_ais_blocks[i].topic,
+				    event->topic_len) == 0) {
+				uint16_t *val = mqtt_ais_blocks[i].analog_val;
+				// We must check pointer because variables could not be glued already.
+				if (val) {
+					uint16_t val2 = 0;
+					for (int j = 0; j < event->data_len;
+					     j++) {
+						if (event->data[j] < '0' ||
+						    event->data[j] > '9') {
+							log_error(
+								"invalid analog value in mqtt: t=%.*s p=%.*s",
+								event->topic_len,
+								event->topic,
+								event->data_len,
+								event->data);
+							return;
+						}
+						val2 = val2 * 10 +
+						       (event->data[j] - '0');
+					}
+					*val = val2;
+				}
+				return;
+			}
+		}
+#endif
 
 	log_error("unexpected mqtt msg: topic=%.*s payload=%.*s",
 		  event->topic_len, event->topic, event->data_len, event->data);
@@ -545,8 +603,7 @@ int mqtt_publish(const char *topic, const char *data)
 void die(uint8_t reason)
 {
 	PRINTF("\n\nDYING BECAUSE %d\n\n", reason);
-	for (;;)
-		;
+	uavcan_restart();
 }
 
 uint64_t uptime_usec()

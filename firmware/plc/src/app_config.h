@@ -2,6 +2,9 @@
 
 #define LOGLEVEL LOGLEVEL_DEBUG
 
+// communication debug is very chatty, maybe we don't want it...
+//#define WITHOUT_COM_DEBUG
+
 // ---------------------------------------------- hw config --------------------
 
 // remote variables start at this index
