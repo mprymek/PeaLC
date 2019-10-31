@@ -60,6 +60,11 @@
 // how often to run uavcan RX/TX [ms]
 #define UAVCAN_RXTX_PERIOD 200
 
+// ---------------------------------------------- WiFi -------------------------
+
+#define WIFI_SSID "MY_WIFI"
+#define WIFI_PASSWD "supersecret"
+
 // ---------------------------------------------- defaults & internal ----------
 
 #include "app_config_defaults.h"

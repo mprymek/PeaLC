@@ -8,6 +8,10 @@
 #include <freertos/FreeRTOS.h>
 #include <driver/gpio.h>
 #include <driver/can.h>
+#include <esp_wifi.h>
+#include <esp_system.h>
+#include <nvs_flash.h>
+#include <esp_event_loop.h>
 
 #include <uavcan_node.h>
 
@@ -17,6 +21,13 @@
 #include "locks.h"
 #include "ui.h"
 #include "tools.h"
+
+// IDF-functions return code check
+#define RET_CHECK(x, msg)                                                      \
+	if ((x) != ESP_OK) {                                                   \
+		log_error(msg " failed");                                      \
+		return -1;                                                     \
+	}
 
 // ---------------------------------------------- logging ----------------------
 
@@ -322,6 +333,68 @@ int uavcan_can_tx(const CanardCANFrame *frame)
 
 	return 0;
 }
+
+// ---------------------------------------------- wifi -------------------------
+
+#ifdef WITH_WIFI
+
+static esp_err_t wifi_event_handler(void *ctx, system_event_t *event);
+
+const static int WIFI_CONNECTED_BIT = BIT0;
+
+int wifi_init()
+{
+	RET_CHECK(nvs_flash_init(), "NVS init");
+	tcpip_adapter_init();
+	RET_CHECK(esp_event_loop_init(wifi_event_handler, NULL),
+		  "Wifi event loop creation");
+	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+	RET_CHECK(esp_wifi_init(&cfg), "Wifi init");
+	RET_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM),
+		  "esp_wifi_set_storage");
+	wifi_config_t wifi_config = {
+        .sta = {
+            .ssid = WIFI_SSID,
+            .password = WIFI_PASSWD,
+        },
+    };
+	RET_CHECK(esp_wifi_set_mode(WIFI_MODE_STA), "esp_wifi_set_mode");
+	RET_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config),
+		  "esp_wifi_set_config");
+	RET_CHECK(esp_wifi_start(), "esp_wifi_start");
+
+	PRINTF("connecting ");
+	if (!WAIT_BIT(WIFI_READY_BIT)) {
+		return -1;
+	}
+
+	ui_wifi_ok(true);
+
+	return 0;
+}
+
+static esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
+{
+	switch (event->event_id) {
+	case SYSTEM_EVENT_STA_START:
+		esp_wifi_connect();
+		break;
+	case SYSTEM_EVENT_STA_GOT_IP:
+		xEventGroupSetBits(global_event_group, WIFI_READY_BIT);
+		break;
+	case SYSTEM_EVENT_STA_DISCONNECTED:
+		log_warning("wifi disconnected");
+		// TODO: check error
+		esp_wifi_connect();
+		xEventGroupClearBits(global_event_group, WIFI_READY_BIT);
+		break;
+	default:
+		break;
+	}
+	return ESP_OK;
+}
+
+#endif // ifdef WITH_WIFI
 
 // ---------------------------------------------- misc -------------------------
 

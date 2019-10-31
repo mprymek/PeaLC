@@ -14,29 +14,28 @@
 #define STATUS_LED_VALUE(x) (x)
 #endif
 
-int ui_init()
-{
-	uint8_t pins[] = {
-#ifdef PLC_TICK_PIN
-		PLC_TICK_PIN,
-#endif
-#ifdef CAN_RX_OK_PIN
-		CAN_RX_OK_PIN,
-#endif
-#ifdef CAN_TX_OK_PIN
-		CAN_TX_OK_PIN,
-#endif
-	};
-
-	for (int i = 0; i < sizeof(pins); i++) {
-		if (set_do_pin_value(pins[i], STATUS_LED_VALUE(false))) {
-			return -1;
-		}
-		if (set_pin_mode_do(pins[i])) {
-			return -2;
-		}
+#define INIT_PIN(pin, value)                                                   \
+	if (set_do_pin_value(pin, STATUS_LED_VALUE(value))) {                  \
+		return -1;                                                     \
+	}                                                                      \
+	if (set_pin_mode_do(pin)) {                                            \
+		return -2;                                                     \
 	}
 
+int ui_init()
+{
+#ifdef PLC_TICK_PIN
+	INIT_PIN(PLC_TICK_PIN, false);
+#endif
+#ifdef CAN_RX_OK_PIN
+	INIT_PIN(CAN_RX_OK_PIN, false);
+#endif
+#ifdef CAN_TX_OK_PIN
+	INIT_PIN(CAN_TX_OK_PIN, false);
+#endif
+#ifdef WIFI_OK_PIN
+	INIT_PIN(WIFI_OK_PIN, false);
+#endif
 	return 0;
 }
 
@@ -77,5 +76,12 @@ void ui_can_tx()
 		state = !state;
 		set_do_pin_value(CAN_TX_OK_PIN, STATUS_LED_VALUE(state));
 	});
+#endif
+}
+
+void ui_wifi_ok(bool value)
+{
+#ifdef WIFI_OK_PIN
+	set_do_pin_value(WIFI_OK_PIN, STATUS_LED_VALUE(value));
 #endif
 }

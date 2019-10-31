@@ -100,6 +100,10 @@ int can2_init(void);
 
 extern volatile can_bus_state_t can_bus_state;
 
+// ---------------------------------------------- wifi -------------------------
+
+int wifi_init(void);
+
 // ---------------------------------------------- misc -------------------------
 
 typedef enum {

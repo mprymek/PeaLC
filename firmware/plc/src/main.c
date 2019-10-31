@@ -35,6 +35,9 @@ static void main_init()
 	START("ui", ui_init());
 	START("io", io_init());
 	START("UAVCAN", uavcan2_init());
+#ifdef WITH_WIFI
+	START("wifi", wifi_init());
+#endif
 	START("plc", plc_init());
 
 	PRINTF("-----------------------------------------------------\n");
