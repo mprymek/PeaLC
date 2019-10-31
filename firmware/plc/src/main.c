@@ -1,6 +1,7 @@
 #include "app_config.h"
 #include "hal.h"
 #include "io.h"
+#include "locks.h"
 #include "plc.h"
 #include "tools.h"
 #include "ui.h"
@@ -30,6 +31,7 @@ static void main_init()
 	PRINTF("%s v. %d.%d (UAVCAN v.0)\n\n", APP_NAME, APP_VERSION_MAJOR,
 	       APP_VERSION_MINOR);
 
+	START("locks", locks_init());
 	START("ui", ui_init());
 	START("io", io_init());
 	START("UAVCAN", uavcan2_init());

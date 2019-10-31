@@ -14,6 +14,7 @@
 #include "app_config.h"
 #include "uavcan_impl.h"
 #include "hal.h"
+#include "locks.h"
 #include "ui.h"
 #include "tools.h"
 

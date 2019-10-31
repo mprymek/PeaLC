@@ -1,8 +1,11 @@
 #include <iec_std_lib.h>
 
+#include <uavcan_node.h> // node status constants
+
 #include "app_config.h"
 #include "hal.h"
 #include "io.h"
+#include "locks.h"
 #include "plc.h"
 #include "ui.h"
 
@@ -25,6 +28,8 @@ static uint64_t tick = 0;
 
 int plc_init()
 {
+	plc_set_state(PLC_STATE_STARTING);
+
 	// initialize PLC program
 	config_init__();
 	connect_buffers();
@@ -35,12 +40,16 @@ int plc_init()
 		die(DEATH_TASK_CREATION);
 	}
 
+	xEventGroupSetBits(global_event_group, PLC_INITIALIZED_BIT);
+
 	return 0;
 }
 
 static void plc_task(void *pvParameters)
 {
 	TickType_t last_wake = xTaskGetTickCount();
+
+	plc_set_state(PLC_STATE_RUNNING);
 
 	for (;;) {
 		update_time();
@@ -74,6 +83,28 @@ static void plc_task(void *pvParameters)
 
 		vTaskDelayUntil(&last_wake,
 				pdMS_TO_TICKS(common_ticktime__ / MILLION));
+	}
+}
+
+void plc_set_state(plc_state_t state)
+{
+	switch (state) {
+	case PLC_STATE_STARTING:
+		uavcan_node_status.mode =
+			UAVCAN_PROTOCOL_NODESTATUS_MODE_INITIALIZATION;
+		break;
+	case PLC_STATE_RUNNING:
+		uavcan_node_status.mode =
+			UAVCAN_PROTOCOL_NODESTATUS_MODE_OPERATIONAL;
+		running = true;
+		break;
+	case PLC_STATE_PAUSED:
+		uavcan_node_status.mode =
+			UAVCAN_PROTOCOL_NODESTATUS_MODE_MAINTENANCE;
+		running = false;
+		break;
+	default:
+		log_error("invalid plc state: %d", state);
 	}
 }
 

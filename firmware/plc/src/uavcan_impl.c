@@ -8,6 +8,7 @@
 
 #include "app_config.h"
 #include "hal.h"
+#include "locks.h"
 #include "plc.h"
 #include "uavcan_impl.h"
 
@@ -27,7 +28,8 @@ int uavcan2_init()
 	uavcan_init();
 
 	uavcan_node_status.health = UAVCAN_PROTOCOL_NODESTATUS_HEALTH_OK;
-	uavcan_node_status.mode = UAVCAN_PROTOCOL_NODESTATUS_MODE_OPERATIONAL;
+	uavcan_node_status.mode =
+		UAVCAN_PROTOCOL_NODESTATUS_MODE_INITIALIZATION;
 
 	//uavcan_node_info.hardware_version.major = HW_VERSION_MAJOR;
 	//uavcan_node_info.hardware_version.minor = HW_VERSION_MINOR;
@@ -42,6 +44,8 @@ int uavcan2_init()
 	uavcan_node_info.name.data = (uint8_t *)APP_NAME;
 	uavcan_node_info.name.len = strlen(APP_NAME);
 
+	uavcan_broadcast_status();
+
 	if (xTaskCreate(uavcan_task, "uavcan", STACK_SIZE_UAVCAN, NULL,
 			TASK_PRIORITY_UAVCAN, &uavcan_task_h) != pdPASS) {
 		log_error("Failed to create uavcan status task");
@@ -55,8 +59,12 @@ void uavcan_task(void *pvParameters)
 {
 	TickType_t last_wake = xTaskGetTickCount();
 
-	// TODO: Terrible hack! Should wait for plc initialization
-	vTaskDelay(pdMS_TO_TICKS(1000));
+	// We must wait for PLC buffers initialization
+	// TODO: We are not broadcasting node status and are not responding to NodeInfo
+	//       during this period.
+	if (!WAIT_BIT(PLC_INITIALIZED_BIT)) {
+		die(DEATH_INITIALIZATION_TIMEOUT);
+	}
 
 	for (;;) {
 		uavcan_vals_block_t *block;

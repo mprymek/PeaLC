@@ -108,6 +108,7 @@ typedef enum {
 	DEATH_UNREACHABLE_REACHED,
 	DEATH_TASK_CREATION,
 	DEATH_CAN_DRIVER_ERROR,
+	DEATH_INITIALIZATION_TIMEOUT,
 } death_reasons_t;
 
 void die(uint8_t reason);
