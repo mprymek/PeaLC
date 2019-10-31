@@ -10,11 +10,6 @@
 
 #include "uavcan_node.h"
 
-// how often to send NodeStatus [ms]
-#ifndef NODE_STATUS_PERIOD
-#define NODE_STATUS_PERIOD 1000
-#endif
-
 #ifndef UAVCAN_MEM_POOL_SIZE
 #define UAVCAN_MEM_POOL_SIZE 1024
 #endif
@@ -267,9 +262,11 @@ void uavcan_on_transfer_received(CanardInstance *ins, CanardRxTransfer *transfer
         case UAVCAN_PROTOCOL_RESTARTNODE_ID:
             handle_RestartNode(ins, transfer);
             return;
+#if UAVCAN_WITH_PARAM_GETSET
         case UAVCAN_PROTOCOL_PARAM_GETSET_ID:
             handle_param_GetSet(ins, transfer);
             return;
+#endif
         }
         break;
     }
@@ -339,6 +336,7 @@ static void handle_RestartNode(CanardInstance *ins, CanardRxTransfer *transfer)
     restart_pending = true;
 }
 
+#if UAVCAN_WITH_PARAM_GETSET
 static void handle_param_GetSet(CanardInstance *ins, CanardRxTransfer *transfer)
 {
     uavcan_protocol_param_GetSetRequest req;
@@ -432,6 +430,7 @@ static void handle_param_GetSet(CanardInstance *ins, CanardRxTransfer *transfer)
                            resp_buff,
                            len);
 }
+#endif
 
 int uavcan_log(uint8_t level, const char *text)
 {
