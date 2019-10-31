@@ -1,8 +1,7 @@
 #include "canard.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 int uavcan2_init(void);

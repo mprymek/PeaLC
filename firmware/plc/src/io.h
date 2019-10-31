@@ -6,8 +6,7 @@
 #define IO_DOES_NOT_EXIST 2
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 int io_init();

@@ -14,26 +14,42 @@
 #define PLC_TICK_PIN 13
 #define STATUS_LEDS_INVERTED
 // IO pins mapping
-#define DIS_PINS {16, 17, 5, 18}
-#define DOS_PINS {2}
+#define DIS_PINS                                                               \
+	{                                                                      \
+		16, 17, 5, 18                                                  \
+	}
+#define DOS_PINS                                                               \
+	{                                                                      \
+		2                                                              \
+	}
 //#define AIS_PINS {33, 32} // 26, 25 does not work?!
 //#define AOS_PINS {35, 34}
-#define AIS_PINS {}
-#define AOS_PINS {}
+#define AIS_PINS                                                               \
+	{                                                                      \
+	}
+#define AOS_PINS                                                               \
+	{                                                                      \
+	}
 // CAN
 #define CAN_RX_PIN 23
 #define CAN_TX_PIN 22
 
 // ---------------------------------------------- remote blocks ----------------
 
-#define UAVCAN_DIS_BLOCKS { \
-        {.node_id = 51, .index = 0, .len = 1}, \
-    }
-#define UAVCAN_DOS_BLOCKS { \
-        {.node_id = 51, .index = 0, .len = 1}, \
-    }
-#define UAVCAN_AIS_BLOCKS {}
-#define UAVCAN_AOS_BLOCKS {}
+#define UAVCAN_DIS_BLOCKS                                                      \
+	{                                                                      \
+		{ .node_id = 51, .index = 0, .len = 1 },                       \
+	}
+#define UAVCAN_DOS_BLOCKS                                                      \
+	{                                                                      \
+		{ .node_id = 51, .index = 0, .len = 1 },                       \
+	}
+#define UAVCAN_AIS_BLOCKS                                                      \
+	{                                                                      \
+	}
+#define UAVCAN_AOS_BLOCKS                                                      \
+	{                                                                      \
+	}
 
 // ---------------------------------------------- communication config ---------
 
@@ -43,8 +59,6 @@
 
 // how often to run uavcan RX/TX [ms]
 #define UAVCAN_RXTX_PERIOD 200
-
-
 
 // ---------------------------------------------- defaults & internal ----------
 

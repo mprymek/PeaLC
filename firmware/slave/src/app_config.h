@@ -16,10 +16,20 @@
 #define DOS_PINS {3, 4, 5, 7}
 #define AOS_PINS {6, 9}
 */
-#define DIS_PINS {}
-#define AIS_PINS {PIN_A0, PIN_A1, PIN_A2, PIN_A3}
-#define DOS_PINS {4, 5, 6, 7}
-#define AOS_PINS {}
+#define DIS_PINS                                                               \
+	{                                                                      \
+	}
+#define AIS_PINS                                                               \
+	{                                                                      \
+		PIN_A0, PIN_A1, PIN_A2, PIN_A3                                 \
+	}
+#define DOS_PINS                                                               \
+	{                                                                      \
+		4, 5, 6, 7                                                     \
+	}
+#define AOS_PINS                                                               \
+	{                                                                      \
+	}
 #define DOS_PINS_INVERTED
 // CAN
 #define CAN_CS_PIN 10
@@ -34,14 +44,22 @@
 
 #endif // ifdef __AVR__
 
-
 #ifdef STM32F1
 
 // IO pins mapping
-#define DIS_PINS {}
-#define AIS_PINS {}
-#define DOS_PINS {PB12, PB13, PB14, PB15}
-#define AOS_PINS {}
+#define DIS_PINS                                                               \
+	{                                                                      \
+	}
+#define AIS_PINS                                                               \
+	{                                                                      \
+	}
+#define DOS_PINS                                                               \
+	{                                                                      \
+		PB12, PB13, PB14, PB15                                         \
+	}
+#define AOS_PINS                                                               \
+	{                                                                      \
+	}
 #define DOS_PINS_INVERTED
 
 #endif // #ifdef STM32F1

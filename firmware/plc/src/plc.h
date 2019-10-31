@@ -1,10 +1,8 @@
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 int plc_init(void);
-
 
 // ---------------------------------------------- MatIEC-compiled program API --
 
@@ -15,15 +13,14 @@ extern unsigned long long common_ticktime__;
 
 // ---------------------------------------------- remote vars ------------------
 
-typedef struct
-{
-    uint8_t node_id;
-    uint8_t index;
-    uint8_t len;
-    union {
-        uint16_t *analog_vals;
-        bool *digital_vals;
-    };
+typedef struct {
+	uint8_t node_id;
+	uint8_t index;
+	uint8_t len;
+	union {
+		uint16_t *analog_vals;
+		bool *digital_vals;
+	};
 } uavcan_vals_block_t;
 
 extern uavcan_vals_block_t uavcan_dis_blocks[];

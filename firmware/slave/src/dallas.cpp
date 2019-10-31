@@ -11,7 +11,6 @@
 #include "hal.h"
 #include "io.h"
 
-
 // how long to wait for temperature conversion [ms]
 #define WAIT_INTERVAL 1000
 
@@ -29,7 +28,6 @@ DallasTemperature dallas(&one_wire);
 static void prepare(void);
 static void read_temps(void);
 
-
 int dallas_init(void)
 {
 	dallas.begin();
@@ -44,15 +42,14 @@ void dallas_update(void)
 	unsigned long now = millis();
 	static unsigned long last_state_change = 0;
 
-	if (state == STATE_READY && now - last_state_change > TEMPS_READ_INTERVAL - WAIT_INTERVAL)
-	{
+	if (state == STATE_READY &&
+	    now - last_state_change > TEMPS_READ_INTERVAL - WAIT_INTERVAL) {
 		prepare();
 		state = STATE_WAITING;
 		last_state_change = now;
 		return;
 	}
-	if (state == STATE_WAITING && now - last_state_change > WAIT_INTERVAL)
-	{
+	if (state == STATE_WAITING && now - last_state_change > WAIT_INTERVAL) {
 		read_temps();
 		state = STATE_READY;
 		last_state_change = now;
@@ -73,22 +70,18 @@ static void prepare(void)
 static void read_temps(void)
 {
 	float val_f;
-	for (int i = 0; i < TEMPS_NUM; i++)
-	{
+	for (int i = 0; i < TEMPS_NUM; i++) {
 		// TODO: getTempCByIndex is slow. Use faster functions (get by addr ones)
 		//       Also, index will change when sensor is (dis)connected.
 		val_f = dallas.getTempCByIndex(i);
-		if (val_f == DEVICE_DISCONNECTED_C)
-		{
+		if (val_f == DEVICE_DISCONNECTED_C) {
 #if LOGLEVEL >= LOGLEVEL_DEBUG
 			PRINTS("TEMP");
 			PRINTU(i);
 			PRINTS(" ERR!\n");
 #endif
 			virt_ais[TEMPS_IDX_START + i] = UINT16_MAX;
-		}
-		else
-		{
+		} else {
 			virt_ais[TEMPS_IDX_START + i] = (val_f * 100) + 5000;
 #if LOGLEVEL >= LOGLEVEL_DEBUG
 			PRINTS("TEMP");

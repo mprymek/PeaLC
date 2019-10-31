@@ -25,52 +25,56 @@ static uint64_t tick = 0;
 
 int plc_init()
 {
-    // initialize PLC program
-    config_init__();
-    connect_buffers();
+	// initialize PLC program
+	config_init__();
+	connect_buffers();
 
-    if (xTaskCreate(plc_task, "plc", STACK_SIZE_PLC, NULL, TASK_PRIORITY_PLC, &plc_task_h) != pdPASS)
-    {
-        log_error("Failed to create plc task.");
-        die(DEATH_TASK_CREATION);
-    }
+	if (xTaskCreate(plc_task, "plc", STACK_SIZE_PLC, NULL,
+			TASK_PRIORITY_PLC, &plc_task_h) != pdPASS) {
+		log_error("Failed to create plc task.");
+		die(DEATH_TASK_CREATION);
+	}
 
-    return 0;
+	return 0;
 }
 
 static void plc_task(void *pvParameters)
 {
-    TickType_t last_wake = xTaskGetTickCount();
+	TickType_t last_wake = xTaskGetTickCount();
 
-    for (;;)
-    {
-        update_time();
+	for (;;) {
+		update_time();
 
-        if (running)
-        {
-            ui_plc_tick();
+		if (running) {
+			ui_plc_tick();
 #if LOGLEVEL >= LOGLEVEL_INFO
-            float now_f = __CURRENT_TIME.tv_sec + __CURRENT_TIME.tv_nsec / (float)1000000000;
-            PRINTF("\ntick=%llu    time=%.3fs    tick_time=%llums\n", tick, now_f, common_ticktime__ / MILLION);
+			float now_f =
+				__CURRENT_TIME.tv_sec +
+				__CURRENT_TIME.tv_nsec / (float)1000000000;
+			PRINTF("\ntick=%llu    time=%.3fs    tick_time=%llums\n",
+			       tick, now_f, common_ticktime__ / MILLION);
 #endif
 
 #if LOGLEVEL >= LOGLEVEL_DEBUG
-            // measure clock precission
-            static uint32_t last_time = 0;
-            uint32_t now = uptime_usec();
-            int32_t tdiff = now - last_time;
-            PRINTF("time=%dus    precision: %d - %lld = %lldus\n", now, tdiff, (common_ticktime__ / 1000), tdiff - (common_ticktime__ / 1000));
-            last_time = now;
+			// measure clock precission
+			static uint32_t last_time = 0;
+			uint32_t now = uptime_usec();
+			int32_t tdiff = now - last_time;
+			PRINTF("time=%dus    precision: %d - %lld = %lldus\n",
+			       now, tdiff, (common_ticktime__ / 1000),
+			       tdiff - (common_ticktime__ / 1000));
+			last_time = now;
 #endif
 
-            update_inputs();
-            // execute plc program
-            config_run__(tick);
-            update_outputs();
-        }
+			update_inputs();
+			// execute plc program
+			config_run__(tick);
+			update_outputs();
+		}
 
-        vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(common_ticktime__ / MILLION));
-    }
+		vTaskDelayUntil(&last_wake,
+				pdMS_TO_TICKS(common_ticktime__ / MILLION));
+	}
 }
 
 /*
@@ -81,14 +85,13 @@ so I think it's safer to stick with their implementation...
 */
 static void update_time()
 {
-    __CURRENT_TIME.tv_nsec += common_ticktime__;
-    while (__CURRENT_TIME.tv_nsec >= BILLION)
-    {
-        __CURRENT_TIME.tv_nsec -= BILLION;
-        __CURRENT_TIME.tv_sec++;
-    }
+	__CURRENT_TIME.tv_nsec += common_ticktime__;
+	while (__CURRENT_TIME.tv_nsec >= BILLION) {
+		__CURRENT_TIME.tv_nsec -= BILLION;
+		__CURRENT_TIME.tv_sec++;
+	}
 
-    tick++;
+	tick++;
 }
 
 // ---------------------------------------------- program-specific vars --------
@@ -112,10 +115,14 @@ uavcan_vals_block_t uavcan_dos_blocks[] = UAVCAN_DOS_BLOCKS;
 uavcan_vals_block_t uavcan_ais_blocks[] = UAVCAN_AIS_BLOCKS;
 uavcan_vals_block_t uavcan_aos_blocks[] = UAVCAN_AOS_BLOCKS;
 
-const uint8_t uavcan_dis_blocks_len = sizeof(uavcan_dis_blocks) / sizeof(uavcan_dis_blocks[0]);
-const uint8_t uavcan_dos_blocks_len = sizeof(uavcan_dos_blocks) / sizeof(uavcan_dos_blocks[0]);
-const uint8_t uavcan_ais_blocks_len = sizeof(uavcan_ais_blocks) / sizeof(uavcan_ais_blocks[0]);
-const uint8_t uavcan_aos_blocks_len = sizeof(uavcan_aos_blocks) / sizeof(uavcan_aos_blocks[0]);
+const uint8_t uavcan_dis_blocks_len =
+	sizeof(uavcan_dis_blocks) / sizeof(uavcan_dis_blocks[0]);
+const uint8_t uavcan_dos_blocks_len =
+	sizeof(uavcan_dos_blocks) / sizeof(uavcan_dos_blocks[0]);
+const uint8_t uavcan_ais_blocks_len =
+	sizeof(uavcan_ais_blocks) / sizeof(uavcan_ais_blocks[0]);
+const uint8_t uavcan_aos_blocks_len =
+	sizeof(uavcan_aos_blocks) / sizeof(uavcan_aos_blocks[0]);
 
 #if 0
 uint8_t mqtt_dis_blocks_len = 0;
@@ -153,14 +160,12 @@ uint16_t ext_aos[EXT_BUFF_SIZE];
 bool ext_dis[EXT_BUFF_SIZE];
 uint16_t ext_ais[EXT_BUFF_SIZE];
 
-
 #define AIDX(i) ((i) / 8)
 #define BIDX(i) ((i) % 8)
 
-
 void connect_buffers()
 {
-    // connect program vars to IO buffer
+	// connect program vars to IO buffer
 #define POOL_BOOL_I bool_input
 #define POOL_BOOL_Q bool_output
 #define POOL_UINT_I int_input
@@ -172,152 +177,136 @@ void connect_buffers()
 //      POOL_BOOL_Q[0][0] = __QX0_0;
 // i.e.
 //      bool_output[0][0] = __QX0_0;
-#define __LOCATED_VAR(type, name, inout, type_sym, a, b) POOL_##type##_##inout INDEX_##type(a, b) = name;
+#define __LOCATED_VAR(type, name, inout, type_sym, a, b)                       \
+	POOL_##type##_##inout INDEX_##type(a, b) = name;
 #include "LOCATED_VARIABLES.h"
 #undef __LOCATED_VAR
 
-    uint8_t dis_idx = 0, ais_idx = 0, dos_idx = 0, aos_idx = 0;
+	uint8_t dis_idx = 0, ais_idx = 0, dos_idx = 0, aos_idx = 0;
 
-    log_debug("\nexternal vars blocks...");
+	log_debug("\nexternal vars blocks...");
 
-    // connect UAVCAN blocks
-    for (int i = 0; i < uavcan_dis_blocks_len; i++)
-    {
-        uavcan_vals_block_t *block = &uavcan_dis_blocks[i];
-        log_debug("uavcan DI block: node=%d index=%d len=%d -> %d",
-            block->node_id, block->index, block->len, dis_idx);
-        block->digital_vals = &ext_dis[dis_idx];
-        dis_idx += block->len;
-        // TODO: check bounds
-    }
-    for (int i = 0; i < uavcan_ais_blocks_len; i++)
-    {
-        uavcan_vals_block_t *block = &uavcan_ais_blocks[i];
-        log_debug("uavcan AI block: node=%d index=%d len=%d -> %d",
-            block->node_id, block->index, block->len, ais_idx);
-        block->analog_vals = &ext_ais[ais_idx];
-        ais_idx += block->len;
-        // TODO: check bounds
-    }
-    for (int i = 0; i < uavcan_dos_blocks_len; i++)
-    {
-        uavcan_vals_block_t *block = &uavcan_dos_blocks[i];
-        log_debug("uavcan DO block: node=%d index=%d len=%d -> %d",
-            block->node_id, block->index, block->len, dos_idx);
-        block->digital_vals = &ext_dos[dos_idx];
-        dos_idx += block->len;
-        // TODO: check bounds
-    }
-    for (int i = 0; i < uavcan_aos_blocks_len; i++)
-    {
-        uavcan_vals_block_t *block = &uavcan_aos_blocks[i];
-        log_debug("uavcan AO block: node=%d index=%d len=%d -> %d",
-            block->node_id, block->index, block->len, aos_idx);
-        block->analog_vals = &ext_aos[aos_idx];
-        aos_idx += block->len;
-        // TODO: check bounds
-    }
-
+	// connect UAVCAN blocks
+	for (int i = 0; i < uavcan_dis_blocks_len; i++) {
+		uavcan_vals_block_t *block = &uavcan_dis_blocks[i];
+		log_debug("uavcan DI block: node=%d index=%d len=%d -> %d",
+			  block->node_id, block->index, block->len, dis_idx);
+		block->digital_vals = &ext_dis[dis_idx];
+		dis_idx += block->len;
+		// TODO: check bounds
+	}
+	for (int i = 0; i < uavcan_ais_blocks_len; i++) {
+		uavcan_vals_block_t *block = &uavcan_ais_blocks[i];
+		log_debug("uavcan AI block: node=%d index=%d len=%d -> %d",
+			  block->node_id, block->index, block->len, ais_idx);
+		block->analog_vals = &ext_ais[ais_idx];
+		ais_idx += block->len;
+		// TODO: check bounds
+	}
+	for (int i = 0; i < uavcan_dos_blocks_len; i++) {
+		uavcan_vals_block_t *block = &uavcan_dos_blocks[i];
+		log_debug("uavcan DO block: node=%d index=%d len=%d -> %d",
+			  block->node_id, block->index, block->len, dos_idx);
+		block->digital_vals = &ext_dos[dos_idx];
+		dos_idx += block->len;
+		// TODO: check bounds
+	}
+	for (int i = 0; i < uavcan_aos_blocks_len; i++) {
+		uavcan_vals_block_t *block = &uavcan_aos_blocks[i];
+		log_debug("uavcan AO block: node=%d index=%d len=%d -> %d",
+			  block->node_id, block->index, block->len, aos_idx);
+		block->analog_vals = &ext_aos[aos_idx];
+		aos_idx += block->len;
+		// TODO: check bounds
+	}
 }
 
 // ---------------------------------------------- IO ---------------------------
 
 void update_inputs()
 {
-    log_debug("updating inputs");
+	log_debug("updating inputs");
 
-    // local
-    for (uint8_t i = 0; i < REMOTE_VARS_INDEX; i++)
-    {
-        // digital
-        uint8_t a = AIDX(i);
-        uint8_t b = BIDX(i);
-        IEC_BOOL *bval = bool_input[a][b];
-        if (bval != NULL)
-        {
-            bool val2;
-            io_get_di(i, &val2);
-            log_debug("IX%u.%u = %u", a, b, val2);
-            *bval = val2;
-        }
+	// local
+	for (uint8_t i = 0; i < REMOTE_VARS_INDEX; i++) {
+		// digital
+		uint8_t a = AIDX(i);
+		uint8_t b = BIDX(i);
+		IEC_BOOL *bval = bool_input[a][b];
+		if (bval != NULL) {
+			bool val2;
+			io_get_di(i, &val2);
+			log_debug("IX%u.%u = %u", a, b, val2);
+			*bval = val2;
+		}
 
-        // analog
-        IEC_UINT *uval = int_input[i];
-        if (uval != NULL)
-        {
-            io_get_ai(i, uval);
-            log_debug("IW%u.%u = %u", a, b, *uval);
-        }
-    }
+		// analog
+		IEC_UINT *uval = int_input[i];
+		if (uval != NULL) {
+			io_get_ai(i, uval);
+			log_debug("IW%u.%u = %u", a, b, *uval);
+		}
+	}
 
-    // remote
-    for (uint8_t i = REMOTE_VARS_INDEX; i < IO_BUFFER_SIZE; i++)
-    {
-        // digital
-        uint8_t a = AIDX(i);
-        uint8_t b = BIDX(i);
-        IEC_BOOL *bval = bool_input[a][b];
-        if (bval != NULL)
-        {
-            *bval = ext_dis[i - REMOTE_VARS_INDEX];
-            log_debug("IX%u.%u (R) = %u", a, b, *bval);
-        }
+	// remote
+	for (uint8_t i = REMOTE_VARS_INDEX; i < IO_BUFFER_SIZE; i++) {
+		// digital
+		uint8_t a = AIDX(i);
+		uint8_t b = BIDX(i);
+		IEC_BOOL *bval = bool_input[a][b];
+		if (bval != NULL) {
+			*bval = ext_dis[i - REMOTE_VARS_INDEX];
+			log_debug("IX%u.%u (R) = %u", a, b, *bval);
+		}
 
-        // analog
-        IEC_UINT *uval = int_input[i];
-        if (uval != NULL)
-        {
-            *uval = ext_ais[i - REMOTE_VARS_INDEX];
-            log_debug("IW%u.%u (R) = %u\n", a, b, *uval);
-        }
-    }
+		// analog
+		IEC_UINT *uval = int_input[i];
+		if (uval != NULL) {
+			*uval = ext_ais[i - REMOTE_VARS_INDEX];
+			log_debug("IW%u.%u (R) = %u\n", a, b, *uval);
+		}
+	}
 }
 
 void update_outputs()
 {
-    log_debug("updating outputs");
+	log_debug("updating outputs");
 
-    // local
-    for (uint8_t i = 0; i < REMOTE_VARS_INDEX; i++)
-    {
-        // digital
-        uint8_t a = AIDX(i);
-        uint8_t b = BIDX(i);
-        IEC_BOOL *bval = bool_output[a][b];
-        if (bval != NULL)
-        {
-            log_debug("QX%u.%u = %u", a, b, *bval);
-            io_set_do(i, *bval);
-        }
+	// local
+	for (uint8_t i = 0; i < REMOTE_VARS_INDEX; i++) {
+		// digital
+		uint8_t a = AIDX(i);
+		uint8_t b = BIDX(i);
+		IEC_BOOL *bval = bool_output[a][b];
+		if (bval != NULL) {
+			log_debug("QX%u.%u = %u", a, b, *bval);
+			io_set_do(i, *bval);
+		}
 
-        // analog
-        IEC_UINT *uval = int_output[i];
-        if (uval != NULL)
-        {
-            log_debug("QW%u.%u = %u", a, b, *uval);
-            io_set_ao(i, *uval);
-        }
-    }
+		// analog
+		IEC_UINT *uval = int_output[i];
+		if (uval != NULL) {
+			log_debug("QW%u.%u = %u", a, b, *uval);
+			io_set_ao(i, *uval);
+		}
+	}
 
-    // remote
-    for (uint8_t i = REMOTE_VARS_INDEX; i < IO_BUFFER_SIZE; i++)
-    {
-        // digital
-        uint8_t a = AIDX(i);
-        uint8_t b = BIDX(i);
-        IEC_BOOL *bval = bool_output[a][b];
-        if (bval != NULL)
-        {
-            log_debug("QX%u.%u (R) = %u\n", a, b, *bval);
-            ext_dos[i - REMOTE_VARS_INDEX] = *bval;
-        }
+	// remote
+	for (uint8_t i = REMOTE_VARS_INDEX; i < IO_BUFFER_SIZE; i++) {
+		// digital
+		uint8_t a = AIDX(i);
+		uint8_t b = BIDX(i);
+		IEC_BOOL *bval = bool_output[a][b];
+		if (bval != NULL) {
+			log_debug("QX%u.%u (R) = %u\n", a, b, *bval);
+			ext_dos[i - REMOTE_VARS_INDEX] = *bval;
+		}
 
-        // analog
-        IEC_UINT *uval = int_output[i];
-        if (uval != NULL)
-        {
-            log_debug("QW%u.%u (R) = %u\n", a, b, *uval);
-            ext_aos[i - REMOTE_VARS_INDEX] = *uval;
-        }
-    }
+		// analog
+		IEC_UINT *uval = int_output[i];
+		if (uval != NULL) {
+			log_debug("QW%u.%u (R) = %u\n", a, b, *uval);
+			ext_aos[i - REMOTE_VARS_INDEX] = *uval;
+		}
+	}
 }

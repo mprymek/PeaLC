@@ -2,8 +2,7 @@
 #include <stdbool.h>
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 // ---------------------------------------------- FreeRTOS ---------------------
@@ -22,8 +21,7 @@ void log_info2(const char *format, ...);
 void log_debug2(const char *format, ...);
 
 #ifdef ESP32
-#define PRINTF(format, ...) \
-    printf(format, ##__VA_ARGS__)
+#define PRINTF(format, ...) printf(format, ##__VA_ARGS__)
 #endif
 
 #if defined(__AVR__)
@@ -78,7 +76,6 @@ void printx(uint16_t x);
 #define log_debug(...) ;
 #endif
 
-
 // ---------------------------------------------- IO ---------------------------
 
 int set_pin_mode_di(int pin);
@@ -91,29 +88,26 @@ int get_di_pin_value(int pin, bool *value);
 int set_ao_pin_value(int pin, uint16_t value);
 int get_ai_pin_value(int pin, uint16_t *value);
 
-
 // ---------------------------------------------- CAN --------------------------
 
 typedef enum {
-    CANBS_ERR_ACTIVE = 0,
-    CANBS_ERR_PASSIVE,
-    CANBS_BUS_OFF,
+	CANBS_ERR_ACTIVE = 0,
+	CANBS_ERR_PASSIVE,
+	CANBS_BUS_OFF,
 } can_bus_state_t;
 
 int can2_init(void);
 
 extern volatile can_bus_state_t can_bus_state;
 
-
 // ---------------------------------------------- misc -------------------------
 
-typedef enum
-{
-    DEATH_UNKNOWN = 0,
-    DEATH_INIT_FAILED,
-    DEATH_UNREACHABLE_REACHED,
-    DEATH_TASK_CREATION,
-    DEATH_CAN_DRIVER_ERROR,
+typedef enum {
+	DEATH_UNKNOWN = 0,
+	DEATH_INIT_FAILED,
+	DEATH_UNREACHABLE_REACHED,
+	DEATH_TASK_CREATION,
+	DEATH_CAN_DRIVER_ERROR,
 } death_reasons_t;
 
 void die(uint8_t reason);
