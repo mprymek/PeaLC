@@ -38,6 +38,9 @@ static void main_init()
 #ifdef WITH_WIFI
 	START("wifi", wifi_init());
 #endif
+#ifdef WITH_MQTT
+	START("mqtt", mqtt_init());
+#endif
 	START("plc", plc_init());
 
 	PRINTF("-----------------------------------------------------\n");

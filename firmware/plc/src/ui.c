@@ -36,6 +36,10 @@ int ui_init()
 #ifdef WIFI_OK_PIN
 	INIT_PIN(WIFI_OK_PIN, false);
 #endif
+#ifdef MQTT_OK_PIN
+	INIT_PIN(MQTT_OK_PIN, false);
+#endif
+
 	return 0;
 }
 
@@ -83,5 +87,12 @@ void ui_wifi_ok(bool value)
 {
 #ifdef WIFI_OK_PIN
 	set_do_pin_value(WIFI_OK_PIN, STATUS_LED_VALUE(value));
+#endif
+}
+
+void ui_mqtt_ok(bool value)
+{
+#ifdef MQTT_OK_PIN
+	set_do_pin_value(MQTT_OK_PIN, STATUS_LED_VALUE(value));
 #endif
 }

@@ -90,15 +90,29 @@ void plc_set_state(plc_state_t state)
 {
 	switch (state) {
 	case PLC_STATE_STARTING:
+#ifdef WITH_MQTT
+		mqtt_publish4(MQTT_STATUS_TOPIC, MQTT_STATUS_STARTING_MSG, 1,
+			      1);
+#endif
 		uavcan_node_status.mode =
 			UAVCAN_PROTOCOL_NODESTATUS_MODE_INITIALIZATION;
 		break;
 	case PLC_STATE_RUNNING:
+		xEventGroupSetBits(global_event_group, PLC_RUNNING_BIT);
+		ui_set_status("running");
+#ifdef WITH_MQTT
+		mqtt_publish4(MQTT_STATUS_TOPIC, MQTT_STATUS_RUNNING_MSG, 1, 1);
+#endif
 		uavcan_node_status.mode =
 			UAVCAN_PROTOCOL_NODESTATUS_MODE_OPERATIONAL;
 		running = true;
 		break;
 	case PLC_STATE_PAUSED:
+		xEventGroupClearBits(global_event_group, PLC_RUNNING_BIT);
+		ui_set_status("paused");
+#ifdef WITH_MQTT
+		mqtt_publish4(MQTT_STATUS_TOPIC, MQTT_STATUS_PAUSED_MSG, 1, 1);
+#endif
 		uavcan_node_status.mode =
 			UAVCAN_PROTOCOL_NODESTATUS_MODE_MAINTENANCE;
 		running = false;

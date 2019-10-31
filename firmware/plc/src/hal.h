@@ -104,6 +104,12 @@ extern volatile can_bus_state_t can_bus_state;
 
 int wifi_init(void);
 
+// ---------------------------------------------- MQTT -------------------------
+
+int mqtt_init(void);
+int mqtt_publish(const char *topic, const char *data);
+int mqtt_publish4(const char *topic, const char *data, int qos, int retain);
+
 // ---------------------------------------------- misc -------------------------
 
 typedef enum {

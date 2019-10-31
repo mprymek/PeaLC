@@ -10,9 +10,8 @@
 // UI
 #define CAN_RX_OK_PIN 14
 #define CAN_TX_OK_PIN 12
-#define WIFI_ERR_PIN 27
+#define MQTT_OK_PIN 27
 #define PLC_TICK_PIN 13
-#define STATUS_LEDS_INVERTED
 // IO pins mapping
 #define DIS_PINS                                                               \
 	{                                                                      \
@@ -64,6 +63,13 @@
 
 #define WIFI_SSID "MY_WIFI"
 #define WIFI_PASSWD "supersecret"
+
+// ---------------------------------------------- MQTT -------------------------
+
+#define WITH_MQTT
+#define MQTT_BROKER_URL "mqtt://1.2.3.4"
+//#define MQTT_USERNAME ""
+//#define MQTT_PASSWORD ""
 
 // ---------------------------------------------- defaults & internal ----------
 

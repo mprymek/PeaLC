@@ -12,6 +12,7 @@
 #include <esp_system.h>
 #include <nvs_flash.h>
 #include <esp_event_loop.h>
+#include <mqtt_client.h>
 
 #include <uavcan_node.h>
 
@@ -19,6 +20,7 @@
 #include "uavcan_impl.h"
 #include "hal.h"
 #include "locks.h"
+#include "plc.h"
 #include "ui.h"
 #include "tools.h"
 
@@ -395,6 +397,148 @@ static esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
 }
 
 #endif // ifdef WITH_WIFI
+
+// ---------------------------------------------- MQTT -------------------------
+
+#ifdef WITH_MQTT
+
+static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event);
+static void mqtt_handle_msg(esp_mqtt_event_handle_t event);
+
+static esp_mqtt_client_handle_t mqtt_client;
+static SemaphoreHandle_t publish_mutex;
+
+int mqtt_init()
+{
+	esp_mqtt_client_config_t mqtt_cfg = {
+		.uri = MQTT_BROKER_URL,
+		.event_handle = mqtt_event_handler,
+		.lwt_topic = MQTT_STATUS_TOPIC,
+		.lwt_msg = MQTT_STATUS_OFFLINE_MSG,
+		.lwt_qos = 1,
+		.lwt_retain = 1,
+		.username = MQTT_USERNAME,
+		.password = MQTT_PASSWORD,
+	};
+
+	if ((publish_mutex = xSemaphoreCreateMutex()) == NULL) {
+		return -1;
+	}
+
+	if ((mqtt_client = esp_mqtt_client_init(&mqtt_cfg)) == NULL) {
+		return -2;
+	}
+	RET_CHECK(esp_mqtt_client_start(mqtt_client), "mqtt client start");
+
+	PRINTF("connecting ");
+	if (!WAIT_BIT(MQTT_READY_BIT)) {
+		return -1;
+	}
+
+	return 0;
+}
+
+// We provide topic_len because it can be determined statically for constant strings
+// so we do not need to call strlen again and again...
+static bool is_topic(esp_mqtt_event_handle_t event, const char *topic,
+		     size_t topic_len)
+{
+	// topic is zero-terminated string, event->topic is not, therefore we are using topic_len-1
+	return strncmp((const char *)event->topic, topic,
+		       min(event->topic_len, topic_len - 1)) == 0;
+}
+
+static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
+{
+	esp_mqtt_client_handle_t client = event->client;
+	switch (event->event_id) {
+	case MQTT_EVENT_CONNECTED:
+		esp_mqtt_client_subscribe(client, MQTT_SUBTOPIC("#"), 1);
+		break;
+	case MQTT_EVENT_SUBSCRIBED:
+		log_debug("mqtt subscribed");
+		xEventGroupSetBits(global_event_group, MQTT_READY_BIT);
+		ui_mqtt_ok(true);
+		break;
+	case MQTT_EVENT_ERROR:
+		log_error("mqtt error");
+		ui_mqtt_ok(false);
+		break;
+	case MQTT_EVENT_DISCONNECTED:
+		xEventGroupClearBits(global_event_group, MQTT_READY_BIT);
+		ui_mqtt_ok(false);
+		break;
+	case MQTT_EVENT_PUBLISHED:
+		ui_mqtt_ok(true);
+		break;
+	case MQTT_EVENT_DATA:
+		log_debug("MQTT-> %.*s: %.*s", event->topic_len, event->topic,
+			  event->data_len, event->data);
+		mqtt_handle_msg(event);
+		break;
+	case MQTT_EVENT_UNSUBSCRIBED:
+	case MQTT_EVENT_BEFORE_CONNECT:
+		break;
+	}
+	return ESP_OK;
+}
+
+static void mqtt_handle_msg(esp_mqtt_event_handle_t event)
+{
+	// PLC pause
+	if (is_topic(event, MQTT_PAUSE_TOPIC, sizeof(MQTT_PAUSE_TOPIC))) {
+		if (event->data_len > 0) {
+			if (event->data[0] != '0') {
+				plc_set_state(PLC_STATE_PAUSED);
+			} else {
+				plc_set_state(PLC_STATE_RUNNING);
+			}
+		}
+		return;
+	}
+
+	// reset
+	if (is_topic(event, MQTT_RESET_TOPIC, sizeof(MQTT_RESET_TOPIC))) {
+		if (event->data_len > 0) {
+			uavcan_restart();
+		}
+		return;
+	}
+
+	log_error("unexpected mqtt msg: topic=%.*s payload=%.*s",
+		  event->topic_len, event->topic, event->data_len, event->data);
+}
+
+/*
+NOTE from ESP-IDF manual:
+This API could be executed from a user task or from a mqtt event callback i.e. internal mqtt task
+(API is protected by internal mutex, so it might block if a longer data
+receive operation is in progress.
+
+But this is obviously not the case with our ESP-IDF version. We will use our own
+lock and hope it will mitigate te problem.
+See https://github.com/espressif/esp-idf/issues/2975 - locking added to ESP-IDF v. 4.1-dev
+*/
+int mqtt_publish4(const char *topic, const char *data, int qos, int retain)
+{
+	if (xSemaphoreTake(publish_mutex,
+			   pdMS_TO_TICKS(MQTT_MAX_PUBLISH_WAIT))) {
+		int res = esp_mqtt_client_publish(mqtt_client, topic, data, 0,
+						  qos, retain);
+		xSemaphoreGive(publish_mutex);
+		return (res == -1) ? -1 : 0;
+	}
+	log_error("Failed to acquire mqtt lock");
+
+	return -2;
+}
+
+int mqtt_publish(const char *topic, const char *data)
+{
+	return mqtt_publish4(topic, data, 0, 0);
+}
+
+#endif // ifdef WITH_MQTT
 
 // ---------------------------------------------- misc -------------------------
 
