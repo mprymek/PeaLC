@@ -71,19 +71,21 @@
 #define STATUS_LED_VALUE(x) (x)
 #endif
 
+#define DEFAULT_MIN_STATUS_BLINK_DELAY 100
+
 #ifndef UI_MIN_PLC_TICK_DELAY
 // blink at most once per this period [ms]
-#define UI_MIN_PLC_TICK_DELAY 1000
+#define UI_MIN_PLC_TICK_DELAY DEFAULT_MIN_STATUS_BLINK_DELAY
 #endif
 
 #ifndef UI_MIN_CAN_RX_OK_DELAY
 // blink at most once per this period [ms]
-#define UI_MIN_CAN_RX_OK_DELAY 100
+#define UI_MIN_CAN_RX_OK_DELAY DEFAULT_MIN_STATUS_BLINK_DELAY
 #endif
 
 #ifndef UI_MIN_CAN_TX_OK_DELAY
 // blink at most once per this period [ms]
-#define UI_MIN_CAN_TX_OK_DELAY 100
+#define UI_MIN_CAN_TX_OK_DELAY DEFAULT_MIN_STATUS_BLINK_DELAY
 #endif
 
 // ---------------------------------------------- io ---------------------------
