@@ -50,12 +50,26 @@ void uavcan_init()
     canardSetLocalNodeID(&g_canard, UAVCAN_NODE_ID);
 }
 
+void uavcan_flush()
+{
+    const CanardCANFrame *txf = canardPeekTxQueue(&g_canard);
+    while (txf)
+    {
+        const int tx_res = uavcan_can_tx(txf);
+        if (tx_res == 0)
+        {
+            canardPopTxQueue(&g_canard);
+        }
+        txf = canardPeekTxQueue(&g_canard);
+    }
+}
+
 void uavcan_update()
 {
     CanardCANFrame frame;
 
     // RX
-    if (uavcan_can_rx(&frame))
+    while (uavcan_can_rx(&frame))
     {
         int16_t res = canardHandleRxFrame(&g_canard,
                                           &frame,
@@ -77,16 +91,7 @@ void uavcan_update()
     }
 
     // TX
-    const CanardCANFrame *txf = canardPeekTxQueue(&g_canard);
-    while (txf)
-    {
-        const int tx_res = uavcan_can_tx(txf);
-        if (tx_res == 0)
-        {
-            canardPopTxQueue(&g_canard);
-        }
-        txf = canardPeekTxQueue(&g_canard);
-    }
+    uavcan_flush();
 
     if (restart_pending)
     {

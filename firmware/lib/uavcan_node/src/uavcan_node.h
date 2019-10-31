@@ -11,6 +11,7 @@ extern "C"
 // API
 void uavcan_init(void);
 void uavcan_update(void);
+void uavcan_flush(void);
 
 int16_t uavcan_broadcast_status(void);
 int uavcan_log(uint8_t level, const char *text);
