@@ -20,7 +20,7 @@ clean:
 .PHONY: format
 format:
 	find include lib src test \
-		-iname *.h -o -iname *.cpp -o -iname *.c \
+		-type f \( -iname *.h -o -iname *.cpp -o -iname *.c \) \
 	| xargs $(clang-format) -style=file -i
 
 .PHONY: pre-push
