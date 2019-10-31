@@ -58,6 +58,7 @@ int uavcan2_init()
 void uavcan_task(void *pvParameters)
 {
 	TickType_t last_wake = xTaskGetTickCount();
+	uint64_t io_rxtx_delay = common_ticktime__ / 1000;
 
 	// We must wait for PLC buffers initialization
 	// TODO: We are not broadcasting node status and are not responding to NodeInfo
@@ -68,76 +69,85 @@ void uavcan_task(void *pvParameters)
 
 	for (;;) {
 		uavcan_vals_block_t *block;
-
-		// ask for digital inputs
-		for (uint8_t i = 0; i < uavcan_dis_blocks_len; i++) {
-			block = &uavcan_dis_blocks[i];
-			log_com_debug("<- DI%d-%d@%d = ?", block->index,
-				      block->index + block->len - 1,
-				      block->node_id);
-			if (automation_send_get_dis(block->node_id,
-						    block->index,
-						    block->len) < 0) {
-				log_error("get DI TX failed");
-			}
-		}
-		uavcan_update();
-
-		// ask for analog inputs
-		for (uint8_t i = 0; i < uavcan_ais_blocks_len; i++) {
-			block = &uavcan_ais_blocks[i];
-			log_com_debug("<- AI%d-%d@%d = ?", block->index,
-				      block->index + block->len - 1,
-				      block->node_id);
-			if (automation_send_get_ais(block->node_id,
-						    block->index,
-						    block->len) < 0) {
-				log_error("get AI TX failed");
-			}
-		}
-		uavcan_update();
-
-		// set digital outputs
-		for (uint8_t i = 0; i < uavcan_dos_blocks_len; i++) {
-			block = &uavcan_dos_blocks[i];
-#if LOGLEVEL >= LOGLEVEL_DEBUG
-			PRINTF("<- DO%d-%d@%d =", block->index,
-			       block->index + block->len - 1, block->node_id);
-			for (int i = 0; i < block->len; i++) {
-				PRINTF(" %d", block->digital_vals[i]);
-			}
-			PRINTF("\n");
-#endif
-			if (automation_send_set_dos(
-				    block->node_id, block->index,
-				    block->digital_vals, block->len,
-				    CANARD_TRANSFER_PRIORITY_HIGH) < 0) {
-				log_error("DO TX failed");
-			}
-		}
-		uavcan_update();
-
-		// set analog outputs
-		for (uint8_t i = 0; i < uavcan_aos_blocks_len; i++) {
-			block = &uavcan_aos_blocks[i];
-#if LOGLEVEL >= LOGLEVEL_DEBUG
-			PRINTF("<- AO%d-%d@%d =", block->index,
-			       block->index + block->len - 1, block->node_id);
-			for (int i = 0; i < block->len; i++) {
-				PRINTF(" %d", block->analog_vals[i]);
-			}
-			PRINTF("\n");
-#endif
-			if (automation_send_set_aos(
-				    block->node_id, block->index,
-				    block->analog_vals, block->len,
-				    CANARD_TRANSFER_PRIORITY_HIGH) < 0) {
-				log_error("AO TX failed");
-			}
-		}
-		uavcan_update();
-
 		uint64_t now = uptime_usec();
+
+		static uint64_t last_io_rxtx = 0;
+		if (now - last_io_rxtx >= io_rxtx_delay) {
+			last_io_rxtx = now;
+
+			// ask for digital inputs
+			for (uint8_t i = 0; i < uavcan_dis_blocks_len; i++) {
+				block = &uavcan_dis_blocks[i];
+				log_com_debug("<- DI%d-%d@%d = ?", block->index,
+					      block->index + block->len - 1,
+					      block->node_id);
+				if (automation_send_get_dis(block->node_id,
+							    block->index,
+							    block->len) < 0) {
+					log_error("get DI TX failed");
+				}
+			}
+			uavcan_update();
+
+			// ask for analog inputs
+			for (uint8_t i = 0; i < uavcan_ais_blocks_len; i++) {
+				block = &uavcan_ais_blocks[i];
+				log_com_debug("<- AI%d-%d@%d = ?", block->index,
+					      block->index + block->len - 1,
+					      block->node_id);
+				if (automation_send_get_ais(block->node_id,
+							    block->index,
+							    block->len) < 0) {
+					log_error("get AI TX failed");
+				}
+			}
+			uavcan_update();
+
+			// set digital outputs
+			for (uint8_t i = 0; i < uavcan_dos_blocks_len; i++) {
+				block = &uavcan_dos_blocks[i];
+#if LOGLEVEL >= LOGLEVEL_DEBUG
+				PRINTF("<- DO%d-%d@%d =", block->index,
+				       block->index + block->len - 1,
+				       block->node_id);
+				for (int i = 0; i < block->len; i++) {
+					PRINTF(" %d", block->digital_vals[i]);
+				}
+				PRINTF("\n");
+#endif
+				if (automation_send_set_dos(
+					    block->node_id, block->index,
+					    block->digital_vals, block->len,
+					    CANARD_TRANSFER_PRIORITY_HIGH) <
+				    0) {
+					log_error("DO TX failed");
+				}
+			}
+			uavcan_update();
+
+			// set analog outputs
+			for (uint8_t i = 0; i < uavcan_aos_blocks_len; i++) {
+				block = &uavcan_aos_blocks[i];
+#if LOGLEVEL >= LOGLEVEL_DEBUG
+				PRINTF("<- AO%d-%d@%d =", block->index,
+				       block->index + block->len - 1,
+				       block->node_id);
+				for (int i = 0; i < block->len; i++) {
+					PRINTF(" %d", block->analog_vals[i]);
+				}
+				PRINTF("\n");
+#endif
+				if (automation_send_set_aos(
+					    block->node_id, block->index,
+					    block->analog_vals, block->len,
+					    CANARD_TRANSFER_PRIORITY_HIGH) <
+				    0) {
+					log_error("AO TX failed");
+				}
+			}
+			uavcan_update();
+		}
+
 		static uint64_t last_status = 0;
 		if (now - last_status > UAVCAN_STATUS_PERIOD * 1000UL) {
 			if (uavcan_broadcast_status() > 0) {

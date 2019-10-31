@@ -59,9 +59,6 @@
 #define APP_VERSION_MAJOR 0
 #define APP_VERSION_MINOR 1
 
-// how often to run uavcan RX/TX [ms]
-#define UAVCAN_RXTX_PERIOD 200
-
 // ---------------------------------------------- WiFi -------------------------
 
 #define WIFI_SSID "MY_WIFI"

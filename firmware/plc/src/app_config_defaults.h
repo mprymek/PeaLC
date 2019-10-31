@@ -9,6 +9,9 @@
 // how often to transmit node status message [ms]
 #define UAVCAN_STATUS_PERIOD 1000
 
+// how often to run uavcan RX/TX [ms]
+#define UAVCAN_RXTX_PERIOD 10
+
 // ---------------------------------------------- MQTT -------------------------
 
 #ifdef WITH_MQTT
