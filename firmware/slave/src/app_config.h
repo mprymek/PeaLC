@@ -1,6 +1,6 @@
 // ---------------------------------------------- logging ----------------------
 
-#define LOGLEVEL LOGLEVEL_DEBUG
+#define LOGLEVEL LOGLEVEL_INFO
 
 // ---------------------------------------------- hw config --------------------
 

@@ -1,6 +1,6 @@
 // ---------------------------------------------- logging ----------------------
 
-#define LOGLEVEL LOGLEVEL_DEBUG
+#define LOGLEVEL LOGLEVEL_INFO
 
 // communication debug is very chatty, maybe we don't want it...
 //#define WITHOUT_COM_DEBUG
