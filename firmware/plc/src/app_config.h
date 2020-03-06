@@ -55,7 +55,7 @@
 
 // ---------------------------------------------- communication config ---------
 
-#define APP_NAME "PeaPLC-CPU"
+#define APP_NAME "PeaLC-CPU"
 #define APP_VERSION_MAJOR 0
 #define APP_VERSION_MINOR 1
 

@@ -66,7 +66,7 @@
 
 // ---------------------------------------------- communication ----------------
 
-#define APP_NAME "PeaPLC-slave"
+#define APP_NAME "PeaLC-slave"
 #define APP_VERSION_MAJOR 0
 #define APP_VERSION_MINOR 1
 
