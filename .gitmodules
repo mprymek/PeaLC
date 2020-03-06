@@ -7,3 +7,6 @@
 [submodule "firmware/thirdparty/o1heap"]
 	path = firmware/thirdparty/o1heap
 	url = https://github.com/pavel-kirienko/o1heap.git
+[submodule "firmware/thirdparty/nanopb"]
+	path = firmware/thirdparty/nanopb
+	url = https://github.com/nanopb/nanopb.git
