@@ -23,7 +23,8 @@ int uavcan2_init()
 	uavcan_init();
 
 	uavcan_node_status.health = UAVCAN_PROTOCOL_NODESTATUS_HEALTH_OK;
-	uavcan_node_status.mode = UAVCAN_PROTOCOL_NODESTATUS_MODE_OPERATIONAL;
+	uavcan_node_status.mode =
+		UAVCAN_PROTOCOL_NODESTATUS_MODE_INITIALIZATION;
 
 	//uavcan_node_info.hardware_version.major = HW_VERSION_MAJOR;
 	//uavcan_node_info.hardware_version.minor = HW_VERSION_MINOR;
