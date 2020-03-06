@@ -115,8 +115,9 @@ int wifi_init(void);
 // ---------------------------------------------- MQTT -------------------------
 
 int mqtt_init(void);
-int mqtt_publish(const char *topic, const char *data);
-int mqtt_publish4(const char *topic, const char *data, int qos, int retain);
+int mqtt_publish(const char *topic, const char *data, int data_len);
+int mqtt_publish5(const char *topic, const char *data, int data_len, int qos,
+		  int retain);
 
 // ---------------------------------------------- misc -------------------------
 

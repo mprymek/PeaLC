@@ -92,7 +92,8 @@ void plc_set_state(plc_state_t state)
 		xEventGroupSetBits(global_event_group, PLC_RUNNING_BIT);
 		ui_set_status("running");
 #ifdef WITH_MQTT
-		mqtt_publish4(MQTT_STATUS_TOPIC, MQTT_STATUS_RUNNING_MSG, 1, 1);
+		mqtt_publish5(MQTT_STATUS_TOPIC, MQTT_STATUS_RUNNING_MSG, 0, 1,
+			      1);
 #endif
 		uavcan_node_status.mode =
 			UAVCAN_PROTOCOL_NODESTATUS_MODE_OPERATIONAL;
@@ -101,7 +102,8 @@ void plc_set_state(plc_state_t state)
 		xEventGroupClearBits(global_event_group, PLC_RUNNING_BIT);
 		ui_set_status("paused");
 #ifdef WITH_MQTT
-		mqtt_publish4(MQTT_STATUS_TOPIC, MQTT_STATUS_PAUSED_MSG, 1, 1);
+		mqtt_publish5(MQTT_STATUS_TOPIC, MQTT_STATUS_PAUSED_MSG, 0, 1,
+			      1);
 #endif
 		uavcan_node_status.mode =
 			UAVCAN_PROTOCOL_NODESTATUS_MODE_MAINTENANCE;
