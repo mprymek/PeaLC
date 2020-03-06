@@ -260,7 +260,7 @@ void uavcan_get_unique_id(
 	}
 }
 
-void uavcan_restart(void)
+void hal_restart(void)
 {
 	esp_restart();
 }
@@ -620,13 +620,13 @@ void die(uint8_t reason)
 	uavcan_restart();
 }
 
-uint64_t uptime_usec()
+uint64_t hal_uptime_usec()
 {
 	// TODO: esp_timer_get_time returns int64_t only
 	return esp_timer_get_time();
 }
 
-uint32_t uptime_msec()
+uint32_t hal_uptime_msec()
 {
 	return esp_timer_get_time() / 1000;
 }

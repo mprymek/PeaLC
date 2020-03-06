@@ -24,7 +24,7 @@
 #define MAX_ONCE_PER(period, block)                                            \
 	{                                                                      \
 		static uint32_t last_run = 0;                                  \
-		uint32_t now = uptime_msec();                                  \
+		uint32_t now = hal_uptime_msec();                              \
 		if (now - last_run >= (period)) {                              \
 			last_run = now;                                        \
 			block                                                  \

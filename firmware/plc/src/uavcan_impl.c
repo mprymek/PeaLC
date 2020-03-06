@@ -69,7 +69,7 @@ void uavcan_task(void *pvParameters)
 
 	for (;;) {
 		uavcan_vals_block_t *block;
-		uint64_t now = uptime_usec();
+		uint64_t now = hal_uptime_usec();
 
 		static uint64_t last_io_rxtx = 0;
 		if (now - last_io_rxtx >= io_rxtx_delay) {
@@ -188,12 +188,17 @@ void uavcan_error(const char *fmt, ...);
 
 uint64_t uavcan_uptime_usec()
 {
-	return uptime_usec();
+	return hal_uptime_usec();
 }
 
 uint32_t uavcan_uptime_sec()
 {
-	return uptime_msec() / 1000;
+	return hal_uptime_msec() / 1000;
+}
+
+void uavcan_restart(void)
+{
+	hal_restart();
 }
 
 bool uavcan_user_should_accept_transfer(const CanardInstance *ins,

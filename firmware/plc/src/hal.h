@@ -132,8 +132,9 @@ typedef enum {
 
 void die(uint8_t reason);
 
-uint32_t uptime_msec();
-uint64_t uptime_usec();
+void hal_restart(void);
+uint32_t hal_uptime_msec();
+uint64_t hal_uptime_usec();
 
 #ifdef __cplusplus
 }
