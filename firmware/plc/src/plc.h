@@ -8,7 +8,8 @@ int plc_init(void);
 
 void config_init__(void);
 void config_run__(unsigned long tick);
-// "imported"
+
+// "imported" from Matiec-compiled PLC program, [ns]
 extern unsigned long long common_ticktime__;
 
 // ---------------------------------------------- remote vars ------------------

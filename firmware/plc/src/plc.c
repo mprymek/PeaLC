@@ -22,9 +22,6 @@ static void update_inputs(void);
 static TaskHandle_t plc_task_h = NULL;
 static uint64_t tick = 0;
 
-#define BILLION 1000000000
-#define MILLION 1000000
-
 int plc_init()
 {
 	// initialize PLC program
@@ -55,16 +52,15 @@ static void plc_task(void *pvParameters)
 
 		if (IS_BIT_SET(PLC_RUNNING_BIT)) {
 			ui_plc_tick();
-#if LOGLEVEL >= LOGLEVEL_INFO
+
+#if LOGLEVEL >= LOGLEVEL_DEBUG
 			float now_f =
 				__CURRENT_TIME.tv_sec +
 				__CURRENT_TIME.tv_nsec / (float)1000000000;
 			PRINTF("\ntick=%llu    time=%.3fs    tick_time=%llums\n",
 			       tick, now_f, common_ticktime__ / MILLION);
-#endif
 
-#if LOGLEVEL >= LOGLEVEL_DEBUG
-			// measure clock precission
+			// measure clock precision
 			static uint32_t last_time = 0;
 			uint32_t now = uptime_usec();
 			int32_t tdiff = now - last_time;

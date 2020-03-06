@@ -111,3 +111,9 @@
 #ifndef TEMPS_READ_INTERVAL
 #define TEMPS_READ_INTERVAL 60000
 #endif
+
+// ---------------------------------------------- aux constants ----------------
+
+#define BILLION 1000000000ULL
+#define MILLION 1000000ULL
+#define MILLISECOND_NS 1000000ULL

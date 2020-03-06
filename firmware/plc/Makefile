@@ -37,12 +37,16 @@ build: prog-build
 	$(pio) run
 
 .PHONY: upload
-upload:
+upload: build
 	$(pio) run -t upload
 
 .PHONY: clean
 clean: prog-clean
 	$(pio) run -t clean
+
+.PHONY: monitor
+monitor:
+	$(pio) device monitor
 
 .PHONY: format
 format:
