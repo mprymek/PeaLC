@@ -111,7 +111,10 @@ uint8_t io_get_ai(uint8_t index, uint16_t *value)
 		if (index >= VIRT_AIS_NUM) {
 			return IO_DOES_NOT_EXIST;
 		}
-		return virt_ais[index];
+		*value = virt_ais[index];
+		log_com_debug("AI%d (virt %d) = %u", index + AIS_NUM, index,
+			      *value);
+		return IO_OK;
 	}
 	if (get_ai_pin_value(AI_PIN[index], &value2)) {
 		return IO_HW_ERROR;
