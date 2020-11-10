@@ -36,9 +36,13 @@ int ui_init()
 #ifdef WIFI_OK_PIN
 	INIT_PIN(WIFI_OK_PIN, false);
 #endif
+	// not OK until connected
+	ui_wifi_ok(false);
 #ifdef MQTT_OK_PIN
 	INIT_PIN(MQTT_OK_PIN, false);
 #endif
+	// not OK until connected
+	ui_mqtt_ok(false);
 
 	return 0;
 }
