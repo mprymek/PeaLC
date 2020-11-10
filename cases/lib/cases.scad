@@ -141,7 +141,7 @@ can_dy = 6;
 pwr_dy = can_dy + 2 * c_jstxh_x + 2;
 
 //// connector holes positions (relative to the PCB edge) - cpu
-cpu_leds2x2_dx = 50;
+cpu_leds2x2_dx = 50.5;
 cpu_usb_dy = 9;
 
 //// connector holes positions (relative to the PCB edge) - patchbox
