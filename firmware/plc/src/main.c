@@ -28,15 +28,22 @@ static void main_init()
 	}
 	PRINTF("\n");
 	PRINTF("-----------------------------------------------------\n");
-	PRINTF("%s v. %d.%d (UAVCAN v.0)\n\n", APP_NAME, APP_VERSION_MAJOR,
-	       APP_VERSION_MINOR);
+#ifdef WITH_CAN
+	const char *uavcan_ver = " (UAVCAN v.0)";
+#else
+	const char *uavcan_ver = " (no CAN)";
+#endif
+	PRINTF("%s v. %d.%d%s\n\n", APP_NAME, APP_VERSION_MAJOR,
+	       APP_VERSION_MINOR, uavcan_ver);
 
 	START("locks", locks_init());
 	START("ui", ui_init());
 	START("io", io_init());
 	// plc buffers must be initialized before UAVCAN is started
 	START("plc", plc_init());
+#ifdef WITH_CAN
 	START("UAVCAN", uavcan2_init());
+#endif
 #ifdef WITH_WIFI
 	START("wifi", wifi_init());
 #endif

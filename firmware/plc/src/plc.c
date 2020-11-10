@@ -142,6 +142,7 @@ static void update_time()
 
 // ---------------------------------------------- remote vars ------------------
 
+#ifdef WITH_CAN
 uavcan_vals_block_t uavcan_dis_blocks[] = UAVCAN_DIS_BLOCKS;
 uavcan_vals_block_t uavcan_dos_blocks[] = UAVCAN_DOS_BLOCKS;
 uavcan_vals_block_t uavcan_ais_blocks[] = UAVCAN_AIS_BLOCKS;
@@ -155,6 +156,7 @@ const uint8_t uavcan_ais_blocks_len =
 	sizeof(uavcan_ais_blocks) / sizeof(uavcan_ais_blocks[0]);
 const uint8_t uavcan_aos_blocks_len =
 	sizeof(uavcan_aos_blocks) / sizeof(uavcan_aos_blocks[0]);
+#endif // ifdef WITH_CAN
 
 #if 0
 uint8_t mqtt_dis_blocks_len = 0;
@@ -187,10 +189,12 @@ IEC_UINT *int_output[IO_BUFFER_SIZE];
 //IEC_LINT *special_functions[IO_BUFFER_SIZE];
 
 // external vars buffers
+#ifdef WITH_CAN
 bool ext_dos[EXT_BUFF_SIZE];
 uint16_t ext_aos[EXT_BUFF_SIZE];
 bool ext_dis[EXT_BUFF_SIZE];
 uint16_t ext_ais[EXT_BUFF_SIZE];
+#endif
 
 #define AIDX(i) ((i) / 8)
 #define BIDX(i) ((i) % 8)
@@ -216,6 +220,7 @@ void connect_buffers()
 
 	uint8_t dis_idx = 0, ais_idx = 0, dos_idx = 0, aos_idx = 0;
 
+#ifdef WITH_CAN
 	log_debug("\nexternal vars blocks...");
 
 	// connect UAVCAN blocks
@@ -251,6 +256,7 @@ void connect_buffers()
 		aos_idx += block->len;
 		// TODO: check bounds
 	}
+#endif // ifdef WITH_CAN
 }
 
 // ---------------------------------------------- IO ---------------------------
@@ -280,6 +286,7 @@ void update_inputs()
 		}
 	}
 
+#ifdef WITH_CAN
 	// remote
 	for (uint8_t i = REMOTE_VARS_INDEX; i < IO_BUFFER_SIZE; i++) {
 		// digital
@@ -298,6 +305,7 @@ void update_inputs()
 			log_debug("IW%u.%u (R) = %u\n", a, b, *uval);
 		}
 	}
+#endif // ifdef WITH_CAN
 }
 
 void update_outputs()
@@ -323,6 +331,7 @@ void update_outputs()
 		}
 	}
 
+#ifdef WITH_CAN
 	// remote
 	for (uint8_t i = REMOTE_VARS_INDEX; i < IO_BUFFER_SIZE; i++) {
 		// digital
@@ -341,4 +350,5 @@ void update_outputs()
 			ext_aos[i - REMOTE_VARS_INDEX] = *uval;
 		}
 	}
+#endif // ifdef WITH_CAN
 }

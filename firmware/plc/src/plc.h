@@ -31,6 +31,7 @@ typedef enum {
 
 void plc_set_state(plc_state_t state);
 
+#ifdef WITH_CAN
 extern uavcan_vals_block_t uavcan_dis_blocks[];
 extern uavcan_vals_block_t uavcan_dos_blocks[];
 extern uavcan_vals_block_t uavcan_ais_blocks[];
@@ -46,6 +47,7 @@ extern bool ext_dos[EXT_BUFF_SIZE];
 extern uint16_t ext_aos[EXT_BUFF_SIZE];
 extern bool ext_dis[EXT_BUFF_SIZE];
 extern uint16_t ext_ais[EXT_BUFF_SIZE];
+#endif // ifdef WITH_CAN
 
 #ifdef __cplusplus
 }

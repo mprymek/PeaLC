@@ -134,6 +134,7 @@ int get_ai_pin_value(int pin, uint16_t *value)
 
 // ---------------------------------------------- CAN --------------------------
 
+#ifdef WITH_CAN
 static void can_watch_task(void *pvParameters);
 TaskHandle_t can_watch_task_h = NULL;
 volatile can_bus_state_t can_bus_state = CANBS_ERR_PASSIVE;
@@ -260,11 +261,6 @@ void uavcan_get_unique_id(
 	}
 }
 
-void hal_restart(void)
-{
-	esp_restart();
-}
-
 int uavcan_can_rx(CanardCANFrame *frame)
 {
 	can_message_t esp_msg;
@@ -339,6 +335,7 @@ int uavcan_can_tx(const CanardCANFrame *frame)
 
 	return 0;
 }
+#endif // ifdef WITH_CAN
 
 // ---------------------------------------------- wifi -------------------------
 
@@ -522,7 +519,7 @@ static void mqtt_handle_msg(esp_mqtt_event_handle_t event)
 	// reset
 	if (is_topic(event, MQTT_RESET_TOPIC, sizeof(MQTT_RESET_TOPIC))) {
 		if (event->data_len > 0) {
-			uavcan_restart();
+			hal_restart();
 		}
 		return;
 	}
@@ -614,10 +611,15 @@ int mqtt_publish(const char *topic, const char *data, int data_len)
 
 // ---------------------------------------------- misc -------------------------
 
+void hal_restart(void)
+{
+	esp_restart();
+}
+
 void die(uint8_t reason)
 {
 	PRINTF("\n\nDYING BECAUSE %d\n\n", reason);
-	uavcan_restart();
+	hal_restart();
 }
 
 uint64_t hal_uptime_usec()

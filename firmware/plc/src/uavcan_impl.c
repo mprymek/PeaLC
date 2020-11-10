@@ -1,3 +1,6 @@
+#include "app_config.h"
+#ifdef WITH_CAN
+
 #include <string.h>
 
 #include <uavcan_node.h>
@@ -6,7 +9,6 @@
 #include <automation/SetValues.h>
 #include <automation/GetValues.h>
 
-#include "app_config.h"
 #include "hal.h"
 #include "locks.h"
 #include "plc.h"
@@ -324,3 +326,5 @@ uint8_t automation_get_ais(uint8_t source_node_id, uint8_t index,
 	log_error("Node %d is trying to get my AIs!", source_node_id);
 	return AUTOMATION_GETVALUES_RESPONSE_BAD_ARGUMENT;
 }
+
+#endif

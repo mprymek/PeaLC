@@ -1,3 +1,6 @@
+#include "app_config.h"
+#ifdef WITH_CAN
+
 #include "canard.h"
 
 #ifdef __cplusplus
@@ -9,4 +12,6 @@ void print_frame(const char *direction, const CanardCANFrame *frame);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
