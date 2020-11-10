@@ -46,7 +46,7 @@ void setup()
 void loop()
 {
 	for (;;) {
-		uint32_t now = uptime_msec();
+		uint32_t now = hal_uptime_msec();
 		static uint32_t last_status = 0;
 		if (now - last_status > UAVCAN_STATUS_PERIOD) {
 			if (uavcan_broadcast_status() > 0) {

@@ -128,12 +128,12 @@ void die(uint8_t reason)
 		;
 }
 
-uint64_t uptime_usec()
+uint64_t hal_uptime_usec()
 {
 	return micros();
 }
 
-uint32_t uptime_msec()
+uint32_t hal_uptime_msec()
 {
 	return millis();
 }

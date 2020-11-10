@@ -195,10 +195,10 @@ void automation_on_tell_ais(uint8_t source_node_id, uint8_t index,
 
 uint64_t uavcan_uptime_usec()
 {
-	return uptime_usec();
+	return hal_uptime_usec();
 }
 
 uint32_t uavcan_uptime_sec()
 {
-	return uptime_msec() / 1000;
+	return hal_uptime_msec() / 1000;
 }
