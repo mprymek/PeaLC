@@ -22,7 +22,9 @@
     });
 */
 #define MAX_ONCE_PER(period, block)                                            \
-	{                                                                      \
+	if (period == 0) {                                                     \
+		block                                                          \
+	} else {                                                               \
 		static uint32_t last_run = 0;                                  \
 		uint32_t now = hal_uptime_msec();                              \
 		if (now - last_run >= (period)) {                              \
