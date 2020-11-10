@@ -13,6 +13,7 @@
 // UI
 #define CAN_RX_OK_PIN 14
 #define CAN_TX_OK_PIN 12
+//#define WIFI_OK_PIN 27
 #define MQTT_OK_PIN 27
 #define PLC_TICK_PIN 13
 // IO pins mapping
@@ -35,6 +36,10 @@
 // CAN
 #define CAN_RX_PIN 23
 #define CAN_TX_PIN 22
+
+// ---------------------------------------------- ui ---------------------------
+
+#define STATUS_LEDS_INVERTED
 
 // ---------------------------------------------- remote blocks ----------------
 
