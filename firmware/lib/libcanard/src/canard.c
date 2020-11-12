@@ -1,1 +1,1 @@
-../../../thirdparty/libcanard/canard.c
+../../../thirdparty/libcanard/libcanard/canard.c
