@@ -133,7 +133,9 @@ typedef enum {
 void die(uint8_t reason);
 
 void hal_restart(void);
+// overflows in ~49.7 days
 uint32_t hal_uptime_msec();
+// overflows in ~584942 years
 uint64_t hal_uptime_usec();
 
 #ifdef __cplusplus

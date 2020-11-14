@@ -624,7 +624,8 @@ void die(uint8_t reason)
 
 uint64_t hal_uptime_usec()
 {
-	// TODO: esp_timer_get_time returns int64_t only
+	// NOTE: esp_timer_get_time returns int64_t only but it's still
+	//       OK - overflows in ~292471 years :)
 	return esp_timer_get_time();
 }
 
