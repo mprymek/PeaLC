@@ -17,9 +17,6 @@
 #error unsupported STM32 family
 #endif
 
-#include <uavcan_node.h>
-
-#include "uavcan_impl.h"
 #include "hal.h"
 #include "tools.h"
 #include "ui.h"
@@ -139,64 +136,28 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef *canHandle)
 
 // ---------------------------------------------- UAVCAN -----------------------
 
-void uavcan_get_unique_id(
-	uint8_t out_uid[UAVCAN_PROTOCOL_HARDWAREVERSION_UNIQUE_ID_LENGTH])
-{
-	// For other STM32 families, see e.g. http://blog.gorski.pm/stm32-unique-id
-#ifdef STM32F1
-	unsigned long *id = (unsigned long *)0x1FFFF7E8;
-#else
-#error uavcan_get_unique_id(...) not implemented for this STM32 family
-#endif
-	assert(UAVCAN_PROTOCOL_HARDWAREVERSION_UNIQUE_ID_LENGTH >= 12);
-	for (int i = 0; i < 12; i++) {
-		out_uid[i] = id[i];
-	}
-	for (int i = 12; i < UAVCAN_PROTOCOL_HARDWAREVERSION_UNIQUE_ID_LENGTH;
-	     i++) {
-		out_uid[i] = 0;
-	}
-}
-
-void uavcan_restart(void)
-{
-	NVIC_SystemReset();
-}
-
-int uavcan_can_rx(CanardCANFrame *frame)
+void can2_receive()
 {
 	CAN_RxHeaderTypeDef header;
+	uint8_t payload[8];
 
-	if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) == 0)
-		return 0;
-
-	if (HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &header, frame->data) !=
-	    HAL_OK)
-		return 0;
-
-	// Set UAVCAN frame flags
-	if (header.IDE == CAN_ID_EXT) {
-		frame->id = header.ExtId | CANARD_CAN_FRAME_EFF;
-	} else {
-		frame->id = header.StdId;
+	if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) == 0) {
+		return;
 	}
-	if (header.RTR == CAN_RTR_REMOTE) {
-		frame->id |= CANARD_CAN_FRAME_RTR;
+
+	if (HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &header, payload) !=
+	    HAL_OK) {
+		return;
 	}
-	// TODO: error flag?!
-
-	frame->data_len = header.DLC;
-
-#if LOGLEVEL >= LOGLEVEL_DEBUG
-	print_frame("->", frame);
-#endif
+	if (header.IDE != CAN_ID_EXT) {
+		return;
+	}
 
 	ui_can_rx();
-
-	return 1;
+	can2_on_receive(header.ExtId, payload, header.DLC);
 }
 
-int uavcan_can_tx(const CanardCANFrame *frame)
+int can2_send(uint32_t id, const void *payload, size_t payload_len)
 {
 	uint32_t mailBox;
 	HAL_StatusTypeDef res;
@@ -205,30 +166,15 @@ int uavcan_can_tx(const CanardCANFrame *frame)
 	can1message.ExtId = 0;
 	can1message.StdId = 0;
 	can1message.TransmitGlobalTime = DISABLE;
-	can1message.RTR = (frame->id & CANARD_CAN_FRAME_RTR) ? CAN_RTR_REMOTE :
-							       CAN_RTR_DATA;
-	can1message.DLC = frame->data_len;
+	can1message.RTR = CAN_RTR_DATA;
+	can1message.DLC = payload_len;
+	can1message.IDE = CAN_ID_EXT;
+	can1message.ExtId = id;
 
-	if (frame->id & CANARD_CAN_FRAME_EFF) {
-		can1message.IDE = CAN_ID_EXT;
-		can1message.ExtId = frame->id & (~(CANARD_CAN_FRAME_EFF |
-						   CANARD_CAN_FRAME_ERR |
-						   CANARD_CAN_FRAME_RTR));
-	} else {
-		can1message.IDE = CAN_ID_STD;
-		can1message.StdId = frame->id & (~(CANARD_CAN_FRAME_EFF |
-						   CANARD_CAN_FRAME_ERR |
-						   CANARD_CAN_FRAME_RTR));
-	}
-
-#if LOGLEVEL >= LOGLEVEL_DEBUG
-	print_frame("<-", frame);
-#endif
 	// TODO: discarding "const" qualifier!
-	if ((res = HAL_CAN_AddTxMessage(&hcan, &can1message,
-					(uint8_t *)frame->data, &mailBox)) !=
-	    HAL_OK) {
-		uavcan_error("CAN TX error");
+	if ((res = HAL_CAN_AddTxMessage(&hcan, &can1message, (uint8_t *)payload,
+					&mailBox)) != HAL_OK) {
+		log_error("CAN TX error");
 		return -2;
 	}
 

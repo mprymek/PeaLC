@@ -66,9 +66,14 @@
 
 // ---------------------------------------------- communication ----------------
 
+#define UAVCAN_NODE_ID 51
+
 #define APP_NAME "PeaLC-slave"
 #define APP_VERSION_MAJOR 0
 #define APP_VERSION_MINOR 1
+
+// slave always use CAN
+#define WITH_CAN
 
 // ---------------------------------------------- defaults & internal ----------
 

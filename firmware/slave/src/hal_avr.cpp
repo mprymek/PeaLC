@@ -5,15 +5,18 @@
 #include <SPI.h>
 #include <mcp_can.h>
 
-#include <uavcan_node.h>
-
 #include "app_config.h"
 #include "hal.h"
+#include "uavcan_common.h"
 #include "ui.h"
-#include "uavcan_impl.h" // print_frame
 
 // ---------------------------------------------- CAN --------------------------
 
+#ifdef WITH_CAN
+
+#error TODO: UAVCAN not implemented for AVR
+
+#if 0
 MCP_CAN CAN0(CAN_CS_PIN);
 
 int can2_init()
@@ -26,22 +29,6 @@ int can2_init()
 }
 
 // ---------------------------------------------- UAVCAN -----------------------
-
-// TODO: read unique id from HW
-void uavcan_get_unique_id(
-	uint8_t out_uid[UAVCAN_PROTOCOL_HARDWAREVERSION_UNIQUE_ID_LENGTH])
-{
-	for (int i = 0; i < UAVCAN_PROTOCOL_HARDWAREVERSION_UNIQUE_ID_LENGTH;
-	     i++) {
-		out_uid[i] = 0xFF;
-	}
-}
-
-void (*reset)(void) = 0;
-void uavcan_restart(void)
-{
-	reset();
-}
 
 int uavcan_can_rx(CanardCANFrame *frame)
 {
@@ -84,5 +71,8 @@ int uavcan_can_tx(const CanardCANFrame *frame)
 
 	return 0;
 }
+#endif // if 0
+
+#endif // ifdef WITH_CAN
 
 #endif // ifdef __AVR__

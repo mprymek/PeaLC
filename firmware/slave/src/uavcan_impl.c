@@ -1,204 +1,194 @@
-#include <Arduino.h>
-
-#include "uavcan_node.h"
-#include "uavcan_automation.h"
-
-#include "automation/SetValues.h"
-#include "automation/GetValues.h"
-
 #include "app_config.h"
+
+#include <canard.h>
+#include <canard_dsdl.h>
+
 #include "hal.h"
 #include "io.h"
-#include "uavcan_impl.h"
+#include "tools.h"
+#include "uavcan_common.h"
 
-int uavcan2_init()
+static CanardRxSubscription set_dos_req_subscription;
+static CanardRxSubscription get_dis_req_subscription;
+static CanardRxSubscription set_aos_req_subscription;
+static CanardRxSubscription get_ais_req_subscription;
+
+int uavcan_init2()
 {
-	// init CAN HW
-	int res;
-	if ((res = can2_init())) {
-		return res;
-	}
+	canardRxSubscribe(&uavcan_canard, CanardTransferKindRequest,
+			  UAVCAN_SET_DOS_PORT_ID, UAVCAN_SET_DOS_REQ_EXT,
+			  CANARD_DEFAULT_TRANSFER_ID_TIMEOUT_USEC,
+			  &set_dos_req_subscription);
 
-	// init UAVCAN
-	uavcan_init();
+	canardRxSubscribe(&uavcan_canard, CanardTransferKindRequest,
+			  UAVCAN_GET_DIS_PORT_ID, UAVCAN_GET_DIS_REQ_EXT,
+			  CANARD_DEFAULT_TRANSFER_ID_TIMEOUT_USEC,
+			  &get_dis_req_subscription);
 
-	uavcan_node_status.health = UAVCAN_PROTOCOL_NODESTATUS_HEALTH_OK;
-	uavcan_node_status.mode =
-		UAVCAN_PROTOCOL_NODESTATUS_MODE_INITIALIZATION;
+	canardRxSubscribe(&uavcan_canard, CanardTransferKindRequest,
+			  UAVCAN_SET_AOS_PORT_ID, UAVCAN_SET_AOS_REQ_EXT,
+			  CANARD_DEFAULT_TRANSFER_ID_TIMEOUT_USEC,
+			  &set_aos_req_subscription);
 
-	//uavcan_node_info.hardware_version.major = HW_VERSION_MAJOR;
-	//uavcan_node_info.hardware_version.minor = HW_VERSION_MINOR;
-	uavcan_get_unique_id(uavcan_node_info.hardware_version.unique_id);
-	//uavcan_node_info.hardware_version.certificate_of_authenticity.data = ;
-	//uavcan_node_info.hardware_version.certificate_of_authenticity.len = 0;
-	uavcan_node_info.software_version.major = APP_VERSION_MAJOR;
-	uavcan_node_info.software_version.minor = APP_VERSION_MINOR;
-	//uavcan_node_info.software_version.image_crc = ;
-	//uavcan_node_info.software_version.optional_field_flags = ;
-	//uavcan_node_info.software_version.vcs_commit = GIT_HASH;
-	uavcan_node_info.name.data = (uint8_t *)APP_NAME;
-	uavcan_node_info.name.len = strlen(APP_NAME);
+	canardRxSubscribe(&uavcan_canard, CanardTransferKindRequest,
+			  UAVCAN_GET_AIS_PORT_ID, UAVCAN_GET_AIS_REQ_EXT,
+			  CANARD_DEFAULT_TRANSFER_ID_TIMEOUT_USEC,
+			  &get_ais_req_subscription);
 
 	return 0;
 }
 
-bool uavcan_user_should_accept_transfer(const CanardInstance *ins,
-					uint64_t *out_data_type_signature,
-					uint16_t data_type_id,
-					CanardTransferType transfer_type,
-					uint8_t source_node_id)
+void uavcan_update()
 {
-	if (uavcan_automation_should_accept_transfer(
-		    ins, out_data_type_signature, data_type_id, transfer_type,
-		    source_node_id)) {
-		return true;
+	static uint32_t last_status = 0;
+
+	uint32_t now = hal_uptime_msec();
+	if (now - last_status > UAVCAN_STATUS_PERIOD) {
+		if (!uavcan_send_heartbeat()) {
+			last_status = now;
+		}
 	}
 
-	return false;
+	uavcan_send_packets();
+	can2_receive();
 }
 
-void uavcan_user_on_transfer_received(CanardInstance *ins,
-				      CanardRxTransfer *transfer)
+uint8_t uavcan_on_set_dos_req(const CanardNodeID remote_node_id,
+			      const uint8_t index, const uint8_t *const data,
+			      const uint8_t length)
 {
-	if (uavcan_automation_on_transfer_received(ins, transfer)) {
-		return;
-	}
+#if LOGLEVEL >= LOGLEVEL_DEBUG
+	PRINTS("-> DO");
+	PRINTU(index);
+	PRINTS("-");
+	PRINTU(index + length);
+	PRINTS(" :=");
+#endif
 
-	PRINTS("Unexpected transfer\n");
-}
-
-void print_frame(const char *direction, const CanardCANFrame *frame)
-{
-	uint32_t id =
-		frame->id & (~(CANARD_CAN_FRAME_EFF | CANARD_CAN_FRAME_ERR |
-			       CANARD_CAN_FRAME_RTR));
-	PRINTS(direction);
-	PRINTS("  ");
-	PRINTX(id);
-	for (int i = 0; i < frame->data_len; i++) {
+	uint8_t result;
+	bool value;
+	for (int i = 0; i < length; i++) {
+		value = canardDSDLGetBit(data, DIV_UP(length, 8), i);
+#if LOGLEVEL >= LOGLEVEL_DEBUG
 		PRINTS(" ");
-		PRINTX(frame->data[i]);
-	}
-	PRINTS("\n");
-}
-
-uint8_t automation_set_dos(uint8_t source_node_id, uint8_t start_index,
-			   const bool *values, uint8_t len)
-{
-	for (int i = 0; i < len; i++) {
-		if (io_set_do(start_index + i, values[i]) != IO_OK) {
-			return 1;
+		PRINTU(value);
+#endif
+		if ((result = io_set_do(index + i, value)) != IO_OK) {
+			break;
 		}
 	}
 #if LOGLEVEL >= LOGLEVEL_DEBUG
-	PRINTS("DO");
-	PRINTU(start_index);
-	PRINTS("-");
-	PRINTU(start_index + len);
-	PRINTS(" :=");
-	for (int i = 0; i < len; i++) {
-		PRINTS(" ");
-		PRINTU(values[i]);
-	}
 	PRINTS("\n");
 #endif
 
-	return 0;
+	switch (result) {
+	case IO_OK:
+		return UAVCAN_GET_SET_RESULT_OK;
+		break;
+	case IO_HW_ERROR:
+		return UAVCAN_GET_SET_RESULT_HW_ERROR;
+		break;
+	}
+	return UAVCAN_GET_SET_RESULT_BAD_ARGUMENT;
 }
 
-uint8_t automation_set_aos(uint8_t source_node_id, uint8_t start_index,
-			   const uint16_t *values, uint8_t len)
+uint8_t uavcan_on_set_aos_req(const CanardNodeID remote_node_id,
+			      const uint8_t index, const uint8_t *const data,
+			      const uint8_t length)
 {
-	for (int i = 0; i < len; i++) {
-		if (io_set_ao(start_index + i, values[i]) != IO_OK) {
-			return 1;
-		}
-	}
-
 #if LOGLEVEL >= LOGLEVEL_DEBUG
-	PRINTS("AO");
-	PRINTU(start_index);
+	PRINTS("-> AO");
+	PRINTU(index);
 	PRINTS("-");
-	PRINTU(start_index + len);
+	PRINTU(index + length);
 	PRINTS(" :=");
-	for (int i = 0; i < len; i++) {
+#endif
+
+	uint8_t result;
+	uint16_t value;
+	for (int i = 0; i < length; i++) {
+		value = canardDSDLGetU16(data, length * 2, i * 16, 16);
+#if LOGLEVEL >= LOGLEVEL_DEBUG
 		PRINTS(" ");
-		PRINTU(values[i]);
+		PRINTU(value);
+#endif
+		if ((result = io_set_ao(index + i, value)) != IO_OK) {
+			break;
+		}
 	}
+#if LOGLEVEL >= LOGLEVEL_DEBUG
 	PRINTS("\n");
 #endif
 
-	return 0;
-}
-
-uint8_t automation_get_dis(uint8_t source_node_id, uint8_t start_index,
-			   bool *values, uint8_t len)
-{
-	for (int i = 0; i < len; i++) {
-		switch (io_get_di(start_index + i, &values[i])) {
-		case IO_OK:
-			break;
-		case IO_DOES_NOT_EXIST:
-			return AUTOMATION_GETVALUES_RESPONSE_BAD_ARGUMENT;
-		default:
-			return AUTOMATION_GETVALUES_RESPONSE_HW_ERROR;
-		}
+	switch (result) {
+	case IO_OK:
+		return UAVCAN_GET_SET_RESULT_OK;
+		break;
+	case IO_HW_ERROR:
+		return UAVCAN_GET_SET_RESULT_HW_ERROR;
+		break;
 	}
-
-	// TODO: debug print
-
-	return AUTOMATION_GETVALUES_RESPONSE_OK;
+	return UAVCAN_GET_SET_RESULT_BAD_ARGUMENT;
 }
 
-uint8_t automation_get_ais(uint8_t source_node_id, uint8_t start_index,
-			   uint16_t *values, uint8_t len)
+uint8_t uavcan_on_get_dis_req(const CanardNodeID remote_node_id,
+			      const uint8_t index, uint8_t *const data,
+			      const uint8_t length)
 {
-	for (int i = 0; i < len; i++) {
-		switch (io_get_ai(start_index + i, &values[i])) {
-		case IO_OK:
+#if LOGLEVEL >= LOGLEVEL_DEBUG
+	PRINTS("-> DI");
+	PRINTU(index);
+	PRINTS("-");
+	PRINTU(index + length);
+	PRINTS(" = ?\n");
+#endif
+
+	uint8_t result;
+	bool value;
+	for (int i = 0; i < length; i++) {
+		if ((result = io_get_di(index + i, &value)) != IO_OK) {
 			break;
-		case IO_DOES_NOT_EXIST:
-			return AUTOMATION_GETVALUES_RESPONSE_BAD_ARGUMENT;
-		default:
-			return AUTOMATION_GETVALUES_RESPONSE_HW_ERROR;
 		}
+		canardDSDLSetUxx(&data[0], i, value, 1);
 	}
-
-	// TODO: debug print
-
-	return AUTOMATION_GETVALUES_RESPONSE_OK;
+	switch (result) {
+	case IO_OK:
+		return UAVCAN_GET_SET_RESULT_OK;
+		break;
+	case IO_HW_ERROR:
+		return UAVCAN_GET_SET_RESULT_HW_ERROR;
+		break;
+	}
+	return UAVCAN_GET_SET_RESULT_BAD_ARGUMENT;
 }
 
-// not used
-void uavcan_on_node_status(uint8_t source_node_id,
-			   uavcan_protocol_NodeStatus *node_status)
+uint8_t uavcan_on_get_ais_req(const CanardNodeID remote_node_id,
+			      const uint8_t index, uint8_t *const data,
+			      const uint8_t length)
 {
-}
-void automation_on_get_dis_response(uint8_t source_node_id, uint8_t start_index,
-				    bool *values, uint8_t len)
-{
-}
-void automation_on_get_ais_response(uint8_t source_node_id, uint8_t start_index,
-				    uint16_t *values, uint8_t len)
-{
-}
-void automation_on_tell_dis(uint8_t source_node_id, uint8_t index, bool *values,
-			    uint8_t len)
-{
-}
-void automation_on_tell_ais(uint8_t source_node_id, uint8_t index,
-			    uint16_t *values, uint8_t len)
-{
-}
+#if LOGLEVEL >= LOGLEVEL_DEBUG
+	PRINTS("-> AI");
+	PRINTU(index);
+	PRINTS("-");
+	PRINTU(index + length);
+	PRINTS(" = ?\n");
+#endif
 
-// ---------------------------------------------- UAVCAN callbacks -------------
-
-uint64_t uavcan_uptime_usec()
-{
-	return hal_uptime_usec();
-}
-
-uint32_t uavcan_uptime_sec()
-{
-	return hal_uptime_msec() / 1000;
+	uint8_t result;
+	uint16_t value;
+	for (int i = 0; i < length; i++) {
+		if ((result = io_get_ai(index + i, &value)) != IO_OK) {
+			break;
+		}
+		canardDSDLSetUxx(&data[0], i * 16, value, 16);
+	}
+	switch (result) {
+	case IO_OK:
+		return UAVCAN_GET_SET_RESULT_OK;
+		break;
+	case IO_HW_ERROR:
+		return UAVCAN_GET_SET_RESULT_HW_ERROR;
+		break;
+	}
+	return UAVCAN_GET_SET_RESULT_BAD_ARGUMENT;
 }

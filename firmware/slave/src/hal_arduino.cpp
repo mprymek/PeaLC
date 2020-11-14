@@ -4,8 +4,6 @@
 
 #include <Arduino.h>
 
-#include <uavcan_node.h>
-
 #include "app_config.h"
 #include "hal.h"
 

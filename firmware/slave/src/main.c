@@ -1,12 +1,11 @@
 #include <Arduino.h>
 
-#include <uavcan_node.h>
-
 #include "app_config.h"
 #include "dallas.h"
 #include "hal.h"
 #include "io.h"
 #include "ui.h"
+#include "uavcan_common.h"
 #include "uavcan_impl.h"
 
 #define START(lbl, init_fun)                                                   \
@@ -38,7 +37,7 @@ void setup()
 	START("dallas", dallas_init());
 #endif
 	START("io", io_init());
-	START("UAVCAN", uavcan2_init());
+	START("UAVCAN", uavcan_init());
 
 	PRINTS("-----------------------------------------------------\n");
 }
@@ -46,13 +45,6 @@ void setup()
 void loop()
 {
 	for (;;) {
-		uint32_t now = hal_uptime_msec();
-		static uint32_t last_status = 0;
-		if (now - last_status > UAVCAN_STATUS_PERIOD) {
-			if (uavcan_broadcast_status() > 0) {
-				last_status = now;
-			}
-		}
 #ifdef WITH_DALLAS
 		dallas_update();
 #endif
