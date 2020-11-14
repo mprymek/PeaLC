@@ -1,12 +1,11 @@
 #include <iec_std_lib.h>
 
-#include <uavcan_node.h> // node status constants
-
 #include "app_config.h"
 #include "hal.h"
 #include "io.h"
 #include "locks.h"
 #include "plc.h"
+#include "uavcan_common.h" // node status constants
 #include "ui.h"
 
 // "exported" to Matiec-compiled PLC program
@@ -91,8 +90,7 @@ void plc_set_state(plc_state_t state)
 		mqtt_publish5(MQTT_STATUS_TOPIC, MQTT_STATUS_RUNNING_MSG, 0, 1,
 			      1);
 #endif
-		uavcan_node_status.mode =
-			UAVCAN_PROTOCOL_NODESTATUS_MODE_OPERATIONAL;
+		uavcan_node_status.mode = UAVCAN_NODE_MODE_1_0_OPERATIONAL;
 		break;
 	case PLC_STATE_PAUSED:
 		xEventGroupClearBits(global_event_group, PLC_RUNNING_BIT);
@@ -101,8 +99,7 @@ void plc_set_state(plc_state_t state)
 		mqtt_publish5(MQTT_STATUS_TOPIC, MQTT_STATUS_PAUSED_MSG, 0, 1,
 			      1);
 #endif
-		uavcan_node_status.mode =
-			UAVCAN_PROTOCOL_NODESTATUS_MODE_MAINTENANCE;
+		uavcan_node_status.mode = UAVCAN_NODE_MODE_1_0_MAINTENANCE;
 		break;
 	default:
 		log_error("invalid plc state: %d", state);

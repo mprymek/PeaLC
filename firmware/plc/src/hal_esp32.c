@@ -14,10 +14,7 @@
 #include <esp_event_loop.h>
 #include <mqtt_client.h>
 
-#include <uavcan_node.h>
-
 #include "app_config.h"
-#include "uavcan_impl.h"
 #include "hal.h"
 #include "locks.h"
 #include "plc.h"
@@ -135,6 +132,7 @@ int get_ai_pin_value(int pin, uint16_t *value)
 // ---------------------------------------------- CAN --------------------------
 
 #ifdef WITH_CAN
+
 static void can_watch_task(void *pvParameters);
 TaskHandle_t can_watch_task_h = NULL;
 volatile can_bus_state_t can_bus_state = CANBS_ERR_PASSIVE;
@@ -249,91 +247,50 @@ static void can_watch_task(void *pvParameters)
 	}
 }
 
-// ---------------------------------------------- UAVCAN -----------------------
-
-void uavcan_get_unique_id(
-	uint8_t out_uid[UAVCAN_PROTOCOL_HARDWAREVERSION_UNIQUE_ID_LENGTH])
-{
-	esp_efuse_mac_get_default(out_uid);
-	for (int i = 6; i < UAVCAN_PROTOCOL_HARDWAREVERSION_UNIQUE_ID_LENGTH;
-	     i++) {
-		out_uid[i] = 0xFF;
-	}
-}
-
-int uavcan_can_rx(CanardCANFrame *frame)
+int can2_send(uint32_t id, const void *payload, size_t payload_size)
 {
 	can_message_t esp_msg;
 
-	if (can_receive(&esp_msg, 0) != ESP_OK) {
-		return 0;
-	}
-
-	ui_can_rx();
-
-	frame->id = esp_msg.identifier;
-	if (esp_msg.flags & CAN_MSG_FLAG_EXTD) {
-		frame->id |= CANARD_CAN_FRAME_EFF;
-	}
-	if (esp_msg.flags & CAN_MSG_FLAG_RTR) {
-		frame->id |= CANARD_CAN_FRAME_RTR;
-	}
-	// TODO: error flag?!
-
-	if (esp_msg.data_length_code > CANARD_CAN_FRAME_MAX_DATA_LEN) {
-		log_error("ESP CAN frame too big (%u > %u)!",
-			  esp_msg.data_length_code,
-			  CANARD_CAN_FRAME_MAX_DATA_LEN);
-		return 0;
-	}
-
-	memcpy(frame->data, esp_msg.data, esp_msg.data_length_code);
-	frame->data_len = esp_msg.data_length_code;
-
-#if !defined(WITHOUT_COM_DEBUG) && (LOGLEVEL >= LOGLEVEL_DEBUG)
-	print_frame("->", frame);
-#endif
-
-	return 1;
-}
-
-int uavcan_can_tx(const CanardCANFrame *frame)
-{
-	can_message_t esp_msg;
-
-	esp_msg.identifier =
-		frame->id & (~(CANARD_CAN_FRAME_EFF | CANARD_CAN_FRAME_ERR |
-			       CANARD_CAN_FRAME_RTR));
-	esp_msg.flags = 0;
-	if (frame->id & CANARD_CAN_FRAME_EFF) {
-		esp_msg.flags |= CAN_MSG_FLAG_EXTD;
-	}
-	if (frame->id & CANARD_CAN_FRAME_RTR) {
-		esp_msg.flags |= CAN_MSG_FLAG_RTR;
-	}
-	// TODO: error flag?!
-
-	if (frame->data_len > sizeof(esp_msg.data)) {
-		log_error("Canard frame too big (%u > %lu)!", frame->data_len,
-			  sizeof(esp_msg.data));
+	if (payload_size > sizeof(esp_msg.data)) {
 		return -1;
 	}
 
-	memcpy(esp_msg.data, frame->data, frame->data_len);
-	esp_msg.data_length_code = frame->data_len;
+	esp_msg.identifier = id;
+	memcpy(esp_msg.data, payload, payload_size);
+	esp_msg.data_length_code = payload_size;
+	esp_msg.flags = CAN_MSG_FLAG_EXTD;
 
-#if !defined(WITHOUT_COM_DEBUG) && (LOGLEVEL >= LOGLEVEL_DEBUG)
-	print_frame("<-", frame);
-#endif
-
-	if (!can_transmit(&esp_msg, pdMS_TO_TICKS(10)) == ESP_OK) {
-		log_error("CAN TX error");
+	if (can_transmit(&esp_msg, 0) != ESP_OK) {
 		return -2;
 	}
 
 	ui_can_tx();
 
 	return 0;
+}
+
+void can2_receive()
+{
+	can_message_t esp_msg;
+
+	while (can_receive(&esp_msg, 0) == ESP_OK) {
+		uint32_t id = esp_msg.identifier;
+
+		// ignore not-extended-format messages
+		if (!(esp_msg.flags & CAN_MSG_FLAG_EXTD)) {
+			return;
+		}
+
+		if (esp_msg.data_length_code > 8) {
+			log_error("ESP CAN frame too big (%u > 8)!",
+				  esp_msg.data_length_code);
+			return;
+		}
+
+		ui_can_rx();
+		can2_on_receive(esp_msg.identifier, esp_msg.data,
+				esp_msg.data_length_code);
+	}
 }
 #endif // ifdef WITH_CAN
 
@@ -448,7 +405,7 @@ static bool is_topic(esp_mqtt_event_handle_t event, const char *topic,
 {
 	// topic is zero-terminated string, event->topic is not, therefore we are using topic_len-1
 	return strncmp((const char *)event->topic, topic,
-		       min(event->topic_len, topic_len - 1)) == 0;
+		       MIN(event->topic_len, topic_len - 1)) == 0;
 }
 
 static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
@@ -456,7 +413,8 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 	esp_mqtt_client_handle_t client = event->client;
 	switch (event->event_id) {
 	case MQTT_EVENT_CONNECTED:
-		mqtt_publish5(MQTT_STATUS_TOPIC, MQTT_STATUS_STARTING_MSG, 0, 1, 1);
+		mqtt_publish5(MQTT_STATUS_TOPIC, MQTT_STATUS_STARTING_MSG, 0, 1,
+			      1);
 		esp_mqtt_client_subscribe(client, MQTT_SUBTOPIC("#"), 1);
 #ifdef MQTT_WALL_CLOCK_TOPIC
 		esp_mqtt_client_subscribe(client, MQTT_WALL_CLOCK_TOPIC, 0);

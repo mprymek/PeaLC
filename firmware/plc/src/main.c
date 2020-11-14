@@ -5,7 +5,7 @@
 #include "plc.h"
 #include "tools.h"
 #include "ui.h"
-#include "uavcan_impl.h"
+#include "uavcan_common.h"
 
 static void main_init();
 static void main_task(void *pvParameters);
@@ -42,7 +42,7 @@ static void main_init()
 	// plc buffers must be initialized before UAVCAN is started
 	START("plc", plc_init());
 #ifdef WITH_CAN
-	START("UAVCAN", uavcan2_init());
+	START("UAVCAN", uavcan_init());
 #endif
 #ifdef WITH_WIFI
 	START("wifi", wifi_init());
@@ -53,6 +53,7 @@ static void main_init()
 
 	PRINTF("-----------------------------------------------------\n");
 
+	uavcan_node_status.mode = UAVCAN_NODE_MODE_1_0_OPERATIONAL;
 	plc_set_state(PLC_STATE_RUNNING);
 }
 

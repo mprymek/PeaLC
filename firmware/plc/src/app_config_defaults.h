@@ -36,6 +36,12 @@
 	}
 #endif
 
+#ifndef UAVCAN_MEM_POOL_SIZE
+#define UAVCAN_MEM_POOL_SIZE 2048
+#endif
+
+//#define UAVCAN_SUBSCRIBE_HEARTBEAT
+
 // ---------------------------------------------- MQTT -------------------------
 
 #ifdef WITH_MQTT

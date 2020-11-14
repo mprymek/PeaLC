@@ -60,11 +60,13 @@
 
 // ---------------------------------------------- communication config ---------
 
+#define UAVCAN_NODE_ID 50
+
 #define APP_NAME "PeaLC-CPU"
 #define APP_VERSION_MAJOR 0
 #define APP_VERSION_MINOR 1
 
-//#define WITH_CAN
+#define WITH_CAN
 
 // ---------------------------------------------- WiFi -------------------------
 

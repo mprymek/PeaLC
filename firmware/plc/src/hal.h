@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h> // needed for size_t on STM32
 
 #ifdef __cplusplus
 extern "C" {
@@ -105,6 +106,11 @@ typedef enum {
 } can_bus_state_t;
 
 int can2_init(void);
+int can2_send(uint32_t id, const void *payload, size_t payload_len);
+void can2_receive();
+
+// callbacks
+void can2_on_receive(uint32_t id, const void *payload, size_t payload_size);
 
 extern volatile can_bus_state_t can_bus_state;
 

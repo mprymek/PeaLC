@@ -1,18 +1,16 @@
-#if !defined(ARDUINO)
-#define max(a, b)                                                              \
+#define MAX(a, b)                                                              \
 	({                                                                     \
 		__typeof__(a) _a = (a);                                        \
 		__typeof__(b) _b = (b);                                        \
 		_a > _b ? _a : _b;                                             \
 	})
 
-#define min(a, b)                                                              \
+#define MIN(a, b)                                                              \
 	({                                                                     \
 		__typeof__(a) _a = (a);                                        \
 		__typeof__(b) _b = (b);                                        \
 		_a < _b ? _a : _b;                                             \
 	})
-#endif // #if !defined(ARDUINO)
 
 /*
     Usage:
@@ -32,3 +30,6 @@
 			block                                                  \
 		}                                                              \
 	}
+
+// Integer division with round up
+#define DIV_UP(a, b) (((a) / (b)) + ((a % b == 0) ? 0 : 1))
