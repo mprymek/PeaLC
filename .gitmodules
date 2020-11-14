@@ -4,3 +4,6 @@
 [submodule "firmware/thirdparty/libcanard"]
 	path = firmware/thirdparty/libcanard
 	url = https://github.com/UAVCAN/libcanard.git
+[submodule "firmware/thirdparty/o1heap"]
+	path = firmware/thirdparty/o1heap
+	url = https://github.com/pavel-kirienko/o1heap.git
