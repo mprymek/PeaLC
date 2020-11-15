@@ -46,9 +46,12 @@
 
 #ifdef STM32F1
 
+#define CAN_RX_OK_PIN PC13
+
 // IO pins mapping
 #define DIS_PINS                                                               \
 	{                                                                      \
+		PIN_A0, PIN_A1, PIN_A2, PIN_A3                                 \
 	}
 #define AIS_PINS                                                               \
 	{                                                                      \
@@ -61,6 +64,7 @@
 	{                                                                      \
 	}
 #define DOS_PINS_INVERTED
+#define DIS_PINS_INVERTED
 
 #endif // #ifdef STM32F1
 
