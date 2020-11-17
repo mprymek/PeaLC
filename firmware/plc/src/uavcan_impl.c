@@ -1,6 +1,8 @@
 #include "app_config.h"
 #ifdef WITH_CAN
 
+#include <stdbool.h>
+
 #include <canard_dsdl.h>
 
 #include "hal.h"
@@ -8,6 +10,7 @@
 #include "plc.h"
 #include "tools.h"
 #include "uavcan_common.h"
+#include "uavcan_impl.h"
 
 static TaskHandle_t uavcan_task_h = NULL;
 
@@ -52,85 +55,59 @@ void uavcan_task(void *pvParameters)
 	uint64_t io_rxtx_delay = common_ticktime__ / 1000;
 
 	for (;;) {
-		uavcan_vals_block_t *block;
 		uint64_t now = hal_uptime_usec();
 		static uint64_t last_io_rxtx = 0;
 		if (now - last_io_rxtx >= io_rxtx_delay) {
 			last_io_rxtx = now;
 
 			// ask for digital inputs
-			for (uint8_t i = 0; i < uavcan_dis_blocks_len; i++) {
-				block = &uavcan_dis_blocks[i];
-				log_com_debug("<- DI%d-%d@%d = ?", block->index,
-					      block->index + block->len - 1,
-					      block->node_id);
-				if (uavcan_send_get_dis(block->node_id,
-							block->index,
-							block->len) < 0) {
+			for (size_t i = 0; i < digital_inputs_blocks_len; i++) {
+				io_block_t *block = &digital_inputs_blocks[i];
+				uavcan_io_block_t *data = block->driver_data;
+				if (!block->enabled ||
+				    block->driver_type != IO_DRIVER_UAVCAN) {
+					continue;
+				}
+				log_com_debug("%u: <- DI%u-%u@%u = ?",
+					      hal_uptime_msec(), data->index,
+					      data->index + block->length - 1,
+					      data->node_id);
+				if (uavcan_send_get_dis(data->node_id,
+							data->index,
+							block->length) < 0) {
 					log_error("get DI TX failed");
 				}
 			}
 
-#if 0
-			// ask for analog inputs
-			for (uint8_t i = 0; i < uavcan_ais_blocks_len; i++) {
-				block = &uavcan_ais_blocks[i];
-				log_com_debug("<- AI%d-%d@%d = ?", block->index,
-					      block->index + block->len - 1,
-					      block->node_id);
-				if (automation_send_get_ais(block->node_id,
-							    block->index,
-							    block->len) < 0) {
-					log_error("get AI TX failed");
-				}
-			}
-			uavcan_update();
-
-#endif
 			// set digital outputs
-			for (uint8_t i = 0; i < uavcan_dos_blocks_len; i++) {
-				block = &uavcan_dos_blocks[i];
-#if !defined(WITHOUT_COM_DEBUG) && (LOGLEVEL >= LOGLEVEL_DEBUG)
-				PRINTF("<- DO%d-%d@%d =", block->index,
-				       block->index + block->len - 1,
-				       block->node_id);
-				for (int i = 0; i < block->len; i++) {
-					PRINTF(" %d", block->digital_vals[i]);
+			for (size_t i = 0; i < digital_outputs_blocks_len;
+			     i++) {
+				io_block_t *block = &digital_outputs_blocks[i];
+				uavcan_io_block_t *data = block->driver_data;
+				if (!block->enabled ||
+				    block->driver_type != IO_DRIVER_UAVCAN) {
+					continue;
+				}
+				if (!block->dirty) {
+					continue;
+				}
+				#if !defined(WITHOUT_COM_DEBUG) && (LOGLEVEL >= LOGLEVEL_DEBUG)
+				PRINTF("<- DO%u-%u@%u =", data->index,
+				       data->index + block->length - 1,
+				       data->node_id);
+				for (int i = 0; i < block->length; i++) {
+					PRINTF(" %u", ((bool *)block->buff)[i]);
 				}
 				PRINTF("\n");
-#endif
-
-				if (uavcan_send_set_dos(block->node_id,
-							block->index,
-							block->digital_vals,
-							block->len) != 0) {
+				#endif
+				if (uavcan_send_set_dos(
+					    data->node_id, data->index,
+					    block->buff, block->length) < 0) {
 					log_error("DO TX failed");
+					continue;
 				}
+				block->dirty = false;
 			}
-
-#if 0
-			// set analog outputs
-			for (uint8_t i = 0; i < uavcan_aos_blocks_len; i++) {
-				block = &uavcan_aos_blocks[i];
-#if LOGLEVEL >= LOGLEVEL_DEBUG
-				PRINTF("<- AO%d-%d@%d =", block->index,
-				       block->index + block->len - 1,
-				       block->node_id);
-				for (int i = 0; i < block->len; i++) {
-					PRINTF(" %d", block->analog_vals[i]);
-				}
-				PRINTF("\n");
-#endif
-				if (automation_send_set_aos(
-					    block->node_id, block->index,
-					    block->analog_vals, block->len,
-					    CANARD_TRANSFER_PRIORITY_HIGH) <
-				    0) {
-					log_error("AO TX failed");
-				}
-			}
-			uavcan_update();
-#endif
 		}
 
 		static uint64_t last_status = 0;
@@ -157,7 +134,7 @@ void uavcan_on_set_dos_resp(CanardNodeID remote_node_id, uint8_t result,
 }
 
 void uavcan_on_get_dis_resp(CanardNodeID remote_node_id, uint8_t result,
-			    uint8_t index, const uint8_t *const data,
+			    uint8_t index, const uint8_t *const payload,
 			    uint8_t length)
 {
 	if (result != UAVCAN_GET_SET_RESULT_OK) {
@@ -166,32 +143,39 @@ void uavcan_on_get_dis_resp(CanardNodeID remote_node_id, uint8_t result,
 		return;
 	}
 
-#if LOGLEVEL >= LOGLEVEL_DEBUG
-	PRINTF("-> DI%u-%u@%u =", index, index + length - 1,
-	       transfer->remote_node_id);
-#endif
+	for (size_t bi = 0; bi < digital_inputs_blocks_len; bi++) {
+		io_block_t *block = &digital_inputs_blocks[bi];
+		uavcan_io_block_t *data = block->driver_data;
 
-	// buffer length in bytes
-	const size_t data_len = DIV_UP(length, 8);
-
-	for (uint8_t i = 0; i < uavcan_dis_blocks_len; i++) {
-		uavcan_vals_block_t *block = &uavcan_dis_blocks[i];
-		if (!(block->node_id == remote_node_id &&
-		      block->index == index && block->len == length)) {
+		if ((block->driver_type != IO_DRIVER_UAVCAN) ||
+		    (data->node_id != remote_node_id) ||
+		    (data->index != index) || (block->length != length)) {
 			continue;
 		}
-		for (uint8_t j = 0; j < length; j++) {
-			bool value = canardDSDLGetBit(data, data_len, i);
-#if LOGLEVEL >= LOGLEVEL_DEBUG
-			PRINTF(" %d", value);
-#endif
-			block->digital_vals[j] = value;
+
+		const size_t payload_len = DIV_UP(length, 8);
+		for (uint8_t ai = 0; ai < length; ai++) {
+			bool value = canardDSDLGetBit(payload, payload_len, ai);
+			bool *buff_value = &((bool *)block->buff)[ai];
+			if (value != *buff_value) {
+				*buff_value = value;
+				block->dirty = true;
+			}
 		}
-#if LOGLEVEL >= LOGLEVEL_DEBUG
+
+		#if LOGLEVEL >= LOGLEVEL_DEBUG
+		PRINTF("%u: -> DI%u-%u@%u =", hal_uptime_msec(), index,
+		       index + length - 1, remote_node_id);
+		PRINTF(" payload=%u", *payload);
+		for (uint8_t ai = 0; ai < length; ai++) {
+			PRINTF(" %u", ((bool *)block->buff)[ai]);
+		}
 		PRINTF("\n");
-#endif
+		#endif
+
 		return;
 	}
+
 	log_warning("Unexpected DI received");
 }
 

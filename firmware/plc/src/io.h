@@ -1,23 +1,38 @@
-#include <stdint.h>
-#include <stdbool.h>
+#pragma once
 
-#define IO_OK 0
-#define IO_HW_ERROR 1
-#define IO_DOES_NOT_EXIST 2
+#include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef enum {
+	IO_OK = 0,
+	IO_HW_ERROR,
+	IO_DOES_NOT_EXIST,
+} io_result_t;
 
-int io_init();
+typedef enum {
+	IO_DRIVER_GPIO,
+	IO_DRIVER_UAVCAN,
+} io_driver_type_t;
 
-uint8_t io_set_do(uint8_t index, bool value);
-uint8_t io_set_ao(uint8_t index, uint16_t value);
-uint8_t io_get_di(uint8_t index, bool *value);
-uint8_t io_get_ai(uint8_t index, uint16_t *value);
+typedef enum {
+	IO_VALUES_BOOL,
+	IO_VALUES_UINT,
+} io_values_type_t;
 
-extern uint16_t virt_ais[];
+typedef struct {
+	const io_driver_type_t driver_type;
+	const io_values_type_t values_type;
+	bool enabled;
+	bool dirty;
+	const size_t length;
+	void *const buff;
+	void *const driver_data;
+} io_block_t;
 
-#ifdef __cplusplus
-}
-#endif
+extern io_block_t digital_inputs_blocks[];
+extern const size_t digital_inputs_blocks_len;
+extern io_block_t analog_inputs_blocks[];
+extern const size_t analog_inputs_blocks_len;
+extern io_block_t digital_outputs_blocks[];
+extern const size_t digital_outputs_blocks_len;
+extern io_block_t analog_outputs_blocks[];
+extern const size_t analog_outputs_blocks_len;

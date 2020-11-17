@@ -33,3 +33,7 @@
 
 // Integer division with round up
 #define DIV_UP(a, b) (((a) / (b)) + ((a % b == 0) ? 0 : 1))
+
+// Compute number of variable args
+// https://stackoverflow.com/questions/2124339/c-preprocessor-va-args-number-of-arguments
+#define ARGS_NUM(...) (sizeof((int[]){ 0, ##__VA_ARGS__ }) / sizeof(int) - 1)

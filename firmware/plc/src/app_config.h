@@ -6,10 +6,6 @@
 //#define WITHOUT_COM_DEBUG
 
 // ---------------------------------------------- hw config --------------------
-
-// remote variables start at this index
-#define REMOTE_VARS_INDEX 8
-
 // UI
 #define CAN_RX_OK_PIN 14
 #define CAN_TX_OK_PIN 12
@@ -17,51 +13,36 @@
 #define MQTT_OK_PIN 27
 #define PLC_TICK_PIN 13
 
+#define STATUS_LEDS_INVERTED
+
 #define UI_MIN_PLC_TICK_DELAY 500
 #define UI_MIN_CAN_RX_OK_DELAY 500
 #define UI_MIN_CAN_TX_OK_DELAY 500
 
 // IO
-#define DIS_PINS                                                               \
+#define DIGITAL_INPUTS                                                         \
 	{                                                                      \
-		16, 17, 5, 18                                                  \
+		GPIO_INVERTED(0, 16, 17, 5, 18), UAVCAN(51, 0, 4)              \
 	}
-#define DIS_PINS_INVERTED
-#define DOS_PINS                                                               \
+
+#define ANALOG_INPUTS                                                          \
 	{                                                                      \
-		2                                                              \
+		/*GPIO(33, 32),*/ UAVCAN(51, 0, 2),                            \
 	}
-#if 0
-#define AIS_PINS                                                               \
+
+#define DIGITAL_OUTPUTS                                                        \
 	{                                                                      \
-		33, 32                                                         \
+		GPIO(14, 13, 12, 27), UAVCAN(51, 0, 4),                        \
 	}
-#define AOS_PINS                                                               \
+
+#define ANALOG_OUTPUTS                                                         \
 	{                                                                      \
-		35, 34                                                         \
+		/*GPIO(35, 34),*/ UAVCAN(51, 0, 2)                             \
 	}
-#endif
+
 // CAN
 #define CAN_RX_PIN 23
 #define CAN_TX_PIN 22
-
-// remote variables start at this index
-#define REMOTE_VARS_INDEX 8
-
-// ---------------------------------------------- ui ---------------------------
-
-#define STATUS_LEDS_INVERTED
-
-// ---------------------------------------------- remote blocks ----------------
-
-#define UAVCAN_DIS_BLOCKS                                                      \
-	{                                                                      \
-		{ .node_id = 51, .index = 0, .len = 4 },                       \
-	}
-#define UAVCAN_DOS_BLOCKS                                                      \
-	{                                                                      \
-		{ .node_id = 51, .index = 0, .len = 4 },                       \
-	}
 
 // ---------------------------------------------- communication config ---------
 
@@ -96,53 +77,16 @@
 
 // programs using status LEDs as outputs
 #if defined(PROG_BLINK) || defined(PROG_DICE)
-
 #undef CAN_RX_OK_PIN
 #undef CAN_TX_OK_PIN
 #undef MQTT_OK_PIN
 #undef PLC_TICK_PIN
-
-#undef DOS_PINS
-#define DOS_PINS                                                               \
+#undef DIGITAL_OUTPUTS
+#define DIGITAL_OUTPUTS                                                        \
 	{                                                                      \
-		14, 13, 12, 27                                                 \
+		GPIO(14, 13, 12, 27)                                           \
 	}
-
-#endif
-
-// programs using ESP32 BOOT switch as input
-#if defined(PROG_DICE) || defined(PROG_DICE_REMOTE)
-
-#undef DIS_PINS
-#define DIS_PINS                                                               \
-	{                                                                      \
-		0                                                              \
-	}
-#define DIS_PINS_INVERTED
-
-#endif
-
-// programs using remote outputs
-#if defined(PROG_BLINK_REMOTE) || defined(PROG_DICE_REMOTE)
-
-#undef UAVCAN_DOS_BLOCKS
-#define UAVCAN_DOS_BLOCKS                                                      \
-	{                                                                      \
-		{ .node_id = 51, .index = 0, .len = 4 },                       \
-	}
-
-#endif
-
-// programs using remote inputs
-#if defined(PROG_DICE_REMOTE)
-
-#undef UAVCAN_DIS_BLOCKS
-#define UAVCAN_DIS_BLOCKS                                                      \
-	{                                                                      \
-		{ .node_id = 51, .index = 0, .len = 1 },                       \
-	}
-
-#endif
+#endif // PROG_BLINK, PROG_DICE
 
 // ---------------------------------------------- defaults & internal ----------
 

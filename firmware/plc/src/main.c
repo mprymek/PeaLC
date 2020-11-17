@@ -1,6 +1,5 @@
 #include "app_config.h"
 #include "hal.h"
-#include "io.h"
 #include "locks.h"
 #include "plc.h"
 #include "tools.h"
@@ -38,7 +37,6 @@ static void main_init()
 
 	START("locks", locks_init());
 	START("ui", ui_init());
-	START("io", io_init());
 	// plc buffers must be initialized before UAVCAN is started
 	START("plc", plc_init());
 #ifdef WITH_CAN

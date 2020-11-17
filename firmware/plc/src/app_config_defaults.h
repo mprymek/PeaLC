@@ -1,3 +1,8 @@
+#pragma once
+
+#include <stddef.h>
+#include <stdbool.h>
+
 // ---------------------------------------------- hw config --------------------
 
 #if defined(STM32F1)
@@ -11,30 +16,6 @@
 
 // how often to run uavcan RX/TX [ms]
 #define UAVCAN_RXTX_PERIOD 1
-
-#ifndef UAVCAN_DIS_BLOCKS
-#define UAVCAN_DIS_BLOCKS                                                      \
-	{                                                                      \
-	}
-#endif
-
-#ifndef UAVCAN_DOS_BLOCKS
-#define UAVCAN_DOS_BLOCKS                                                      \
-	{                                                                      \
-	}
-#endif
-
-#ifndef UAVCAN_AIS_BLOCKS
-#define UAVCAN_AIS_BLOCKS                                                      \
-	{                                                                      \
-	}
-#endif
-
-#ifndef UAVCAN_AOS_BLOCKS
-#define UAVCAN_AOS_BLOCKS                                                      \
-	{                                                                      \
-	}
-#endif
 
 #ifndef UAVCAN_MEM_POOL_SIZE
 #define UAVCAN_MEM_POOL_SIZE 2048
@@ -123,33 +104,14 @@
 
 // ---------------------------------------------- io ---------------------------
 
-#ifndef VIRT_AIS_NUM
-#define VIRT_AIS_NUM 0
+#ifndef IO_BUFFER_SIZE
+#define IO_BUFFER_SIZE 16
 #endif
 
-#ifndef DIS_PINS
-#define DIS_PINS                                                               \
-	{                                                                      \
-	}
-#endif
-
-#ifndef DOS_PINS
-#define DOS_PINS                                                               \
-	{                                                                      \
-	}
-#endif
-
-#ifndef AIS_PINS
-#define AIS_PINS                                                               \
-	{                                                                      \
-	}
-#endif
-
-#ifndef AOS_PINS
-#define AOS_PINS                                                               \
-	{                                                                      \
-	}
-#endif
+#define DIS_BUFFER_SIZE IO_BUFFER_SIZE
+#define DOS_BUFFER_SIZE IO_BUFFER_SIZE
+#define AIS_BUFFER_SIZE IO_BUFFER_SIZE
+#define AOS_BUFFER_SIZE IO_BUFFER_SIZE
 
 // ---------------------------------------------- tasks ------------------------
 
