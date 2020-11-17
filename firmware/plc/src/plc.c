@@ -90,7 +90,9 @@ void plc_set_state(plc_state_t state)
 		mqtt_publish5(MQTT_STATUS_TOPIC, MQTT_STATUS_RUNNING_MSG, 0, 1,
 			      1);
 #endif
+#ifdef WITH_CAN
 		uavcan_node_status.mode = UAVCAN_NODE_MODE_1_0_OPERATIONAL;
+#endif
 		break;
 	case PLC_STATE_PAUSED:
 		xEventGroupClearBits(global_event_group, PLC_RUNNING_BIT);
@@ -99,7 +101,9 @@ void plc_set_state(plc_state_t state)
 		mqtt_publish5(MQTT_STATUS_TOPIC, MQTT_STATUS_PAUSED_MSG, 0, 1,
 			      1);
 #endif
+#ifdef WITH_CAN
 		uavcan_node_status.mode = UAVCAN_NODE_MODE_1_0_MAINTENANCE;
+#endif
 		break;
 	default:
 		log_error("invalid plc state: %d", state);

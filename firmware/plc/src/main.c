@@ -53,7 +53,9 @@ static void main_init()
 
 	PRINTF("-----------------------------------------------------\n");
 
+#ifdef WITH_CAN
 	uavcan_node_status.mode = UAVCAN_NODE_MODE_1_0_OPERATIONAL;
+#endif
 	plc_set_state(PLC_STATE_RUNNING);
 }
 
