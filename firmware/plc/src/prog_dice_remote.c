@@ -1,6 +1,19 @@
+//
+// Turns on multiple digital outputs one by one. Pauses if a local or remote
+// digital input is set.
+//
+
+// config
+#define OUTPUTS_START_ADDR 4
+#define OUTPUTS_NUM 4
+#define PAUSE_INPUT_ADDR 0
+#define REMOTE_PAUSE_INPUT_ADDR 5
+#define CHANGE_DELAY_MS 50
+#define PROG_DEBUG
+
 #include "app_config.h"
 
-#if defined(PROG_DICE_REMOTE)
+#ifdef PROG_DICE_REMOTE
 
 #include <stdbool.h>
 
@@ -17,32 +30,24 @@ unsigned long long common_ticktime__;
 
 // ---------------------------------------------- program ----------------------
 
-#define CHANGE_DELAY_MS 50
-//#define DEBUG
-
-IEC_BOOL led0, led1, led2, led3, switch_local, switch_remote;
+static IEC_BOOL leds[OUTPUTS_NUM];
+static IEC_BOOL pause_local, pause_remote;
 
 void config_init__(void)
 {
 	common_ticktime__ = CHANGE_DELAY_MS * MILLISECOND_NS;
 
-	// Connect remote output variables to IO buffer.
-	uint8_t i = REMOTE_VARS_INDEX;
-	bool_output[AIDX(i)][BIDX(i)] = &led0;
-	i++;
-	bool_output[AIDX(i)][BIDX(i)] = &led1;
-	i++;
-	bool_output[AIDX(i)][BIDX(i)] = &led2;
-	i++;
-	bool_output[AIDX(i)][BIDX(i)] = &led3;
+	// Map output variables to PLC IO memory.
+	for (uint8_t addr = 0; addr < OUTPUTS_NUM; addr++) {
+		bool_output[AIDX(addr + OUTPUTS_START_ADDR)]
+			   [BIDX(addr + OUTPUTS_START_ADDR)] = &leds[addr];
+	}
 
-	// Connect local input variable to IO buffer.
-	i = 0;
-	bool_input[AIDX(i)][BIDX(i)] = &switch_local;
-
-	// Connect remote input variables to IO buffer.
-	i = REMOTE_VARS_INDEX;
-	bool_input[AIDX(i)][BIDX(i)] = &switch_remote;
+	// Map input variables to PLC IO memory.
+	bool_input[AIDX(PAUSE_INPUT_ADDR)][BIDX(PAUSE_INPUT_ADDR)] =
+		&pause_local;
+	bool_input[AIDX(REMOTE_PAUSE_INPUT_ADDR)]
+		  [BIDX(REMOTE_PAUSE_INPUT_ADDR)] = &pause_remote;
 }
 
 void config_run__(unsigned long tick)
@@ -53,44 +58,24 @@ void config_run__(unsigned long tick)
 	static uint32_t last_change = 0;
 	static uint8_t i = 0;
 	if (now_ms - last_change >= CHANGE_DELAY_MS) {
-		if (!switch_local && !switch_remote) {
+		if (!pause_local && !pause_remote) {
 			last_change = now_ms;
 
-			i = (i + 1) % 4;
-
-			switch (i) {
-			case 0:
-				led0 = 1;
-				led1 = 0;
-				led2 = 0;
-				led3 = 0;
-				break;
-			case 1:
-				led0 = 0;
-				led1 = 1;
-				led2 = 0;
-				led3 = 0;
-				break;
-			case 2:
-				led0 = 0;
-				led1 = 0;
-				led2 = 1;
-				led3 = 0;
-				break;
-			case 3:
-				led0 = 0;
-				led1 = 0;
-				led2 = 0;
-				led3 = 1;
-				break;
-			}
+			// clear previous
+			leds[i] = 0;
+			i = (i + 1) % OUTPUTS_NUM;
+			// set next
+			leds[i] = 1;
 		}
 
-#ifdef DEBUG
-		PRINTF("switches: local=%u remote=%u\tleds: %u %u %u %u\n",
-		       switch_local, switch_remote, led0, led1, led2, led3);
+#ifdef PROG_DEBUG
+		PRINTF("switches: %u %u\tleds:", pause_local, pause_remote);
+		for (uint8_t j = 0; j < OUTPUTS_NUM; j++) {
+			PRINTF(" %u", leds[j]);
+		}
+		PRINTF("\n");
 #endif
 	}
 }
 
-#endif // defined(PROG_DICE_REMOTE)
+#endif // ifdef PROG_DICE_REMOTE

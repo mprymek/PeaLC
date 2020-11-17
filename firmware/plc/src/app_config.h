@@ -91,6 +91,8 @@
 //#define PROG_BLINK_REMOTE
 //#define PROG_DICE
 //#define PROG_DICE_REMOTE
+//#define PROG_DICE_REMOTE_ANALOG
+//#define PROG_ANALOG_REMOTE
 
 // programs using status LEDs as outputs
 #if defined(PROG_BLINK) || defined(PROG_DICE)
