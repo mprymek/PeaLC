@@ -61,7 +61,7 @@ static void plc_task(void *pvParameters)
 
 			// measure clock precision
 			static uint32_t last_time = 0;
-			uint32_t now = uptime_usec();
+			uint32_t now = hal_uptime_usec();
 			int32_t tdiff = now - last_time;
 			PRINTF("time=%dus    precision: %d - %lld = %lldus\n",
 			       now, tdiff, (common_ticktime__ / 1000),
