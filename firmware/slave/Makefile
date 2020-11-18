@@ -17,6 +17,10 @@ upload:
 clean:
 	$(pio) run -t clean
 
+.PHONY: monitor
+monitor:
+	$(pio) device monitor
+
 .PHONY: format
 format:
 	find include lib src test \
