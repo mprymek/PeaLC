@@ -30,7 +30,11 @@ void setup()
 	PRINTU(APP_VERSION_MAJOR);
 	PRINTS(".");
 	PRINTU(APP_VERSION_MINOR);
-	PRINTS(" (UAVCAN v.0)\n\n");
+#ifdef WITH_CAN
+	PRINTS(" (UAVCAN v.1)\n\n");
+#else
+	PRINTS(" (no CAN)\n\n");
+#endif
 
 	START("ui", ui_init());
 #ifdef WITH_DALLAS
@@ -39,6 +43,7 @@ void setup()
 	START("slave", slave_init());
 #ifdef WITH_CAN
 	START("UAVCAN", uavcan_init());
+#endif
 
 	PRINTS("-----------------------------------------------------\n");
 }
@@ -49,6 +54,8 @@ void loop()
 #ifdef WITH_DALLAS
 		dallas_update();
 #endif
+#ifdef WITH_CAN
 		uavcan_update();
+#endif
 	}
 }

@@ -1,5 +1,7 @@
 #include "app_config.h"
 
+#ifdef WITH_CAN
+
 #include <canard.h>
 #include <canard_dsdl.h>
 
@@ -379,3 +381,5 @@ uint8_t uavcan_on_get_ais_req(const CanardNodeID remote_node_id,
 	}
 	return UAVCAN_GET_SET_RESULT_BAD_ARGUMENT;
 }
+
+#endif // #ifdef WITH_CAN
