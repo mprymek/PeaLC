@@ -2,6 +2,8 @@
 
 #if defined(ARDUINO)
 
+#include <stdarg.h>
+
 #include <Arduino.h>
 
 #include "app_config.h"
@@ -31,31 +33,65 @@ void printx(uint16_t x)
 	DBG_SERIAL.print(x, HEX);
 }
 
+#ifdef __AVR__
 // NOTE: We don't have printf -> print at least fmt. Something is better than nothing...
-
-void log_error2(const char *fmt...)
+void log_error2(const char *fmt, ...)
 {
 	PRINTS(fmt);
 	PRINTS("\n");
 }
 
-void log_warning2(const char *fmt...)
+void log_warning2(const char *fmt, ...)
 {
 	PRINTS(fmt);
 	PRINTS("\n");
 }
 
-void log_info2(const char *fmt...)
+void log_info2(const char *fmt, ...)
 {
 	PRINTS(fmt);
 	PRINTS("\n");
 }
 
-void log_debug2(const char *fmt...)
+void log_debug2(const char *fmt, ...)
 {
 	PRINTS(fmt);
 	PRINTS("\n");
 }
+#else
+
+static void va_print(const char *fmt, va_list args)
+{
+	char buff[128];
+	vsnprintf(buff, sizeof(buff), fmt, args);
+	DBG_SERIAL.print(buff);
+	DBG_SERIAL.print("\n");
+}
+
+#define TO_PRINTF                                                              \
+	va_list args;                                                          \
+	va_start(args, fmt);                                                   \
+	va_print(fmt, args);                                                   \
+	va_end(args);
+
+void log_error2(const char *fmt, ...)
+{
+	TO_PRINTF
+}
+void log_warning2(const char *fmt, ...)
+{
+	TO_PRINTF
+}
+void log_info2(const char *fmt, ...)
+{
+	TO_PRINTF
+}
+void log_debug2(const char *fmt, ...)
+{
+	TO_PRINTF
+}
+
+#endif
 
 // ---------------------------------------------- IO ---------------------------
 
