@@ -7,7 +7,7 @@ build = ./build
 # images dir path
 img = ./doc/img
 
-main_parts := cpu-body bpio-body patchbox-body 4relays-holders
+main_parts := cpu-body bpio-body patchbox-body 4relays-holders tm1638-holders
 lids := cpu-top-lid bpio-top-lid patchbox-top-lid bottom-lid
 
 parts := $(main_parts) $(lids)
@@ -46,6 +46,9 @@ $(build)/patchbox-top-lid.stl: lib/cases.scad
 
 $(build)/4relays-holders.stl: lib/cases.scad
 	$(openscad) -o $@ -D make_4relays_holders=1 $<
+
+$(build)/tm1638-holders.stl: lib/cases.scad
+	$(openscad) -o $@ -D make_tm1638_holders=1 $<
 
 $(build)/bottom-lid.stl: lib/cases.scad
 	$(openscad) -o $@ -D make_bottom_lid=1 $<

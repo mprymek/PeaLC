@@ -44,6 +44,9 @@ show_patchbox_pcb = 0;
 // 4relay holder light
 make_4relays_holders = 0;
 
+// TM1638 module holder light
+make_tm1638_holders = 0;
+
 // common
 make_bottom_lid = 0;
 show_bottom_lid = 0;
@@ -620,6 +623,10 @@ if(make_bpio_top_lid) {
 if(make_4relays_holders) {
     render() simple_holder(45, thickness=10, hole=3);
     render() translate([0, 20, 0]) mirror([0, 1, 0]) simple_holder(45, thickness=10, hole=3);
+}
+if(make_tm1638_holders) {
+    render() simple_holder(40, thickness=10, hole=3);
+    render() translate([0, 20, 0]) mirror([0, 1, 0]) simple_holder(40, thickness=10, hole=3);
 }
 if(make_cpu_top_lid) {
     render() translate([ox, 0, oz + tlz]) rotate([0,180,0]) cpu_top_lid();
