@@ -82,6 +82,13 @@
 // slave always use CAN
 #define WITH_CAN
 
+// ---------------------------------------------- TM1638 -----------------------
+
+//#define WITH_TM1638
+#define TM_STROBE_PIN PB12
+#define TM_CLOCK_PIN PB13
+#define TM_DIO_PIN PB14
+
 // ---------------------------------------------- defaults & internal ----------
 
 #include "app_config_defaults.h"

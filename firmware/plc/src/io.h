@@ -11,6 +11,9 @@ typedef enum {
 typedef enum {
 	IO_DRIVER_GPIO,
 	IO_DRIVER_UAVCAN,
+#ifdef WITH_TM1638
+	IO_DRIVER_TM1638,
+#endif
 } io_driver_type_t;
 
 typedef enum {

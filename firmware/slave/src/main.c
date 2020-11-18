@@ -4,6 +4,7 @@
 #include "dallas.h"
 #include "hal.h"
 #include "slave.h"
+#include "tm1638.h"
 #include "ui.h"
 #include "uavcan_common.h"
 #include "uavcan_impl.h"
@@ -37,6 +38,9 @@ void setup()
 #endif
 
 	START("ui", ui_init());
+#ifdef WITH_TM1638
+	START("TM1638", tm1638_init());
+#endif
 #ifdef WITH_DALLAS
 	START("dallas", dallas_init());
 #endif
