@@ -482,51 +482,6 @@ static void mqtt_handle_msg(esp_mqtt_event_handle_t event)
 		return;
 	}
 
-#if 0
-		// set DIx
-		for (int i = 0; i < mqtt_dis_blocks_len; i++) {
-			if (strncmp(event->topic, mqtt_dis_blocks[i].topic,
-				    event->topic_len) == 0) {
-				bool *val = mqtt_dis_blocks[i].digital_val;
-				// We must check pointer because variables could not be glued already.
-				if (val) {
-					*val = (event->data_len == 1 &&
-						event->data[0] == '1');
-				}
-				return;
-			}
-		}
-
-		// set AIx
-		for (int i = 0; i < mqtt_ais_blocks_len; i++) {
-			if (strncmp(event->topic, mqtt_ais_blocks[i].topic,
-				    event->topic_len) == 0) {
-				uint16_t *val = mqtt_ais_blocks[i].analog_val;
-				// We must check pointer because variables could not be glued already.
-				if (val) {
-					uint16_t val2 = 0;
-					for (int j = 0; j < event->data_len;
-					     j++) {
-						if (event->data[j] < '0' ||
-						    event->data[j] > '9') {
-							log_error(
-								"invalid analog value in mqtt: t=%.*s p=%.*s",
-								event->topic_len,
-								event->topic,
-								event->data_len,
-								event->data);
-							return;
-						}
-						val2 = val2 * 10 +
-						       (event->data[j] - '0');
-					}
-					*val = val2;
-				}
-				return;
-			}
-		}
-#endif
-
 	log_error("unexpected mqtt msg: topic=%.*s payload=%.*s",
 		  event->topic_len, event->topic, event->data_len, event->data);
 }
