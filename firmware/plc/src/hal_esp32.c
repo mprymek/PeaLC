@@ -18,8 +18,8 @@
 #include "hal.h"
 #include "locks.h"
 #include "plc.h"
-#include "ui.h"
 #include "tools.h"
+#include "ui.h"
 
 // IDF-functions return code check
 #define RET_CHECK(x, msg)                                                      \
