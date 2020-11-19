@@ -2,6 +2,7 @@
 #include "hal.h"
 #include "locks.h"
 #include "plc.h"
+#include "sparkplug.h"
 #include "tools.h"
 #include "ui.h"
 #include "uavcan_common.h"
@@ -48,6 +49,9 @@ static void main_init()
 #ifdef WITH_MQTT
 	START("mqtt", mqtt_init());
 #endif
+#ifdef WITH_SPARKPLUG
+	START("sparkplug", sp_init());
+#endif
 
 	PRINTF("-----------------------------------------------------\n");
 
@@ -55,6 +59,7 @@ static void main_init()
 	uavcan_node_status.mode = UAVCAN_NODE_MODE_1_0_OPERATIONAL;
 #endif
 	plc_set_state(PLC_STATE_RUNNING);
+	sp_send_nbirth();
 }
 
 static void main_task(void *pvParameters)

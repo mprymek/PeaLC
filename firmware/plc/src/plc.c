@@ -5,6 +5,7 @@
 #include "hal.h"
 #include "locks.h"
 #include "plc.h"
+#include "sparkplug.h"
 #include "tools.h"
 #include "uavcan_common.h" // node status constants
 #include "uavcan_impl.h"
@@ -333,14 +334,36 @@ void init_buffers()
 		},                                                             \
 	}
 
+#define SPARKPLUG_DIGITAL(_metric)                                             \
+	{                                                                      \
+		.driver_type = IO_DRIVER_SPARKPLUG,                            \
+		.values_type = IO_VALUES_BOOL, .length = 1,                    \
+		.buff = (bool[1]){},                                           \
+		.driver_data = &(sp_io_block_t){                               \
+			.metric = _metric,                                     \
+		},                                                             \
+	}
+
+#define SPARKPLUG_ANALOG(_metric)                                              \
+	{                                                                      \
+		.driver_type = IO_DRIVER_SPARKPLUG,                            \
+		.values_type = IO_VALUES_UINT, .length = 1,                    \
+		.buff = (uint16_t[1]){},                                       \
+		.driver_data = &(sp_io_block_t){                               \
+			.metric = _metric,                                     \
+		},                                                             \
+	}
+
 #define GPIO GPIO_DIGITAL
 #define GPIO_INVERTED GPIO_DIGITAL_INVERTED
 #define UAVCAN UAVCAN_DIGITAL
+#define SPARKPLUG SPARKPLUG_DIGITAL
 io_block_t digital_inputs_blocks[] = DIGITAL_INPUTS;
 io_block_t digital_outputs_blocks[] = DIGITAL_OUTPUTS;
 #undef GPIO
 #undef GPIO_INVERTED
 #undef UAVCAN
+#undef SPARKPLUG
 
 const size_t digital_inputs_blocks_len =
 	sizeof(digital_inputs_blocks) / sizeof(io_block_t);
@@ -349,10 +372,12 @@ const size_t digital_outputs_blocks_len =
 
 #define GPIO GPIO_ANALOG
 #define UAVCAN UAVCAN_ANALOG
+#define SPARKPLUG SPARKPLUG_ANALOG
 io_block_t analog_inputs_blocks[] = ANALOG_INPUTS;
 io_block_t analog_outputs_blocks[] = ANALOG_OUTPUTS;
 #undef GPIO
 #undef UAVCAN
+#undef SPARKPLUG
 
 const size_t analog_inputs_blocks_len =
 	sizeof(analog_inputs_blocks) / sizeof(io_block_t);
@@ -469,6 +494,7 @@ static int update_input_block(io_block_t *block)
 	switch (block->driver_type) {
 	case IO_DRIVER_GPIO:
 		return gpio_update_input_block(block);
+	case IO_DRIVER_SPARKPLUG:
 	case IO_DRIVER_UAVCAN:
 		/* noop */;
 	}
@@ -481,6 +507,8 @@ static int update_output_block(io_block_t *block)
 	switch (block->driver_type) {
 	case IO_DRIVER_GPIO:
 		return gpio_update_output_block(block);
+	case IO_DRIVER_SPARKPLUG:
+		return sp_update_output_block(block);
 	case IO_DRIVER_UAVCAN:
 		/* noop */;
 	}

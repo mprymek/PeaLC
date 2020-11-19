@@ -2,6 +2,8 @@
 
 #include <stddef.h>
 
+#include "app_config.h"
+
 typedef enum {
 	IO_OK = 0,
 	IO_HW_ERROR,
@@ -13,6 +15,9 @@ typedef enum {
 	IO_DRIVER_UAVCAN,
 #ifdef WITH_TM1638
 	IO_DRIVER_TM1638,
+#endif
+#ifdef WITH_SPARKPLUG
+	IO_DRIVER_SPARKPLUG,
 #endif
 } io_driver_type_t;
 

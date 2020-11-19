@@ -77,6 +77,13 @@
 #define MQTT_RESET_TOPIC MQTT_SUBTOPIC("reset")
 #endif
 
+// ---------------------------------------------- SparkPlug --------------------
+
+// Maximal number of all metrics. Must be >= 2.
+#ifndef SP_MAX_METRICS
+#define SP_MAX_METRICS 16
+#endif
+
 // ---------------------------------------------- ui ---------------------------
 
 #ifdef STATUS_LEDS_INVERTED

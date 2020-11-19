@@ -66,6 +66,22 @@
 //#define MQTT_USERNAME ""
 //#define MQTT_PASSWORD ""
 
+// ---------------------------------------------- SparkPlug --------------------
+
+#define WITH_SPARKPLUG
+
+#ifndef SP_NODE
+#define SP_NODE APP_NAME
+#endif
+
+#ifndef SP_GROUP
+#define SP_GROUP "PeaLC"
+#endif
+
+#define SP_TOPIC_NODE(msg_type) ("spBv1.0/" SP_GROUP "/" msg_type "/" SP_NODE)
+#define SP_TOPIC_DEVICE(device, msg_type)                                      \
+	("spBv1.0/" SP_GROUP "/" msg_type "/" SP_NODE "/" device)
+
 // ---------------------------------------------- demo programs ----------------
 
 //#define PROG_BLINK
