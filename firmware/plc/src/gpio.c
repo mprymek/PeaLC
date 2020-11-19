@@ -119,7 +119,9 @@ int gpio_update_output_block(io_block_t *block)
 			if (true /* TODO: used */) {
 				uint8_t pin = data->pins[i];
 				bool *value = &((bool *)block->buff)[i];
-				if ((result = set_do_pin_value(pin, *value)) !=
+				if ((result = set_do_pin_value(
+					     pin, (data->inverted) ? !*value :
+								     *value)) !=
 				    IO_OK) {
 					return result;
 				}

@@ -3,7 +3,7 @@
 #include "app_config.h"
 #include "dallas.h"
 #include "hal.h"
-#include "io.h"
+#include "slave.h"
 #include "ui.h"
 #include "uavcan_common.h"
 #include "uavcan_impl.h"
@@ -36,7 +36,8 @@ void setup()
 #ifdef WITH_DALLAS
 	START("dallas", dallas_init());
 #endif
-	START("io", io_init());
+	START("slave", slave_init());
+#ifdef WITH_CAN
 	START("UAVCAN", uavcan_init());
 
 	PRINTS("-----------------------------------------------------\n");
