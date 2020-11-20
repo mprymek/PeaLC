@@ -388,10 +388,16 @@ int mqtt_init()
 	esp_mqtt_client_config_t mqtt_cfg = {
 		.uri = MQTT_BROKER_URL,
 		.event_handle = mqtt_event_handler,
+#ifdef WITH_SPARKPLUG
+		.lwt_topic = SP_TOPIC_NODE("NDEATH"),
+		.lwt_msg = "",
+		.lwt_retain = 0,
+#else
 		.lwt_topic = MQTT_STATUS_TOPIC,
 		.lwt_msg = MQTT_STATUS_OFFLINE_MSG,
-		.lwt_qos = 1,
 		.lwt_retain = 1,
+#endif
+		.lwt_qos = 1,
 		.username = MQTT_USERNAME,
 		.password = MQTT_PASSWORD,
 	};
@@ -430,20 +436,38 @@ static bool is_topic(esp_mqtt_event_handle_t event, const char *topic,
 
 static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 {
+	static int8_t subscription_counter;
 	esp_mqtt_client_handle_t client = event->client;
 	switch (event->event_id) {
 	case MQTT_EVENT_CONNECTED:
+#ifdef WITH_SPARKPLUG
+		subscription_counter = 3;
+		// TODO: move somewhere else?
+		esp_mqtt_client_subscribe(client, SP_TOPIC_NODE("NCMD"), 0);
+		esp_mqtt_client_subscribe(client, SP_TOPIC_DEVICE("+", "DCMD"),
+					  0);
+		esp_mqtt_client_subscribe(client,
+					  "spBv1.0/hsh/DDATA/NodeRED/clock", 0);
+#else
 		mqtt_publish5(MQTT_STATUS_TOPIC, MQTT_STATUS_STARTING_MSG, 0, 1,
 			      1);
-		esp_mqtt_client_subscribe(client, MQTT_SUBTOPIC("#"), 1);
 #ifdef MQTT_WALL_CLOCK_TOPIC
+		subscription_counter = 2;
 		esp_mqtt_client_subscribe(client, MQTT_WALL_CLOCK_TOPIC, 0);
-#endif
+#else
+		subscription_counter = 1;
+#endif // ifdef MQTT_WALL_CLOCK_TOPIC
+		esp_mqtt_client_subscribe(client, MQTT_SUBTOPIC("#"), 1);
+#endif // ifdef WITH_SPARKPLUG
 		break;
 	case MQTT_EVENT_SUBSCRIBED:
-		xEventGroupSetBits(global_event_group, MQTT_READY_BIT);
-		log_debug("mqtt subscribed");
-		ui_mqtt_ok(true);
+		// TODO: Mutex for subscription_counter needed or not?
+		subscription_counter -= 1;
+		if (subscription_counter == 0) {
+			xEventGroupSetBits(global_event_group, MQTT_READY_BIT);
+			log_debug("mqtt subscribed");
+			ui_mqtt_ok(true);
+		}
 		break;
 	case MQTT_EVENT_ERROR:
 		log_error("mqtt error");
@@ -470,6 +494,8 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 	return ESP_OK;
 }
 
+// TODO: REMOVE!
+extern int sp_mqtt_on_message(esp_mqtt_event_handle_t event);
 static void mqtt_handle_msg(esp_mqtt_event_handle_t event)
 {
 #ifdef MQTT_WALL_CLOCK_TOPIC
@@ -501,6 +527,10 @@ static void mqtt_handle_msg(esp_mqtt_event_handle_t event)
 		if (event->data_len > 0) {
 			hal_restart();
 		}
+		return;
+	}
+
+	if (sp_mqtt_on_message(event)) {
 		return;
 	}
 
