@@ -90,7 +90,6 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef *canHandle)
 
 #ifdef USE_ALT_CAN
 		// RX = PB8, TX = PB9
-#error alternative CAN config does not work atm
 		__HAL_RCC_GPIOB_CLK_ENABLE();
 
 		GPIO_InitStruct.Pin = GPIO_PIN_8;
