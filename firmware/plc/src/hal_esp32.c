@@ -529,7 +529,7 @@ void hal_restart(void)
 	esp_restart();
 }
 
-void die(uint8_t reason)
+void die(death_reason_t reason)
 {
 	PRINTF("\n\nDYING BECAUSE %d\n\n", reason);
 	hal_restart();

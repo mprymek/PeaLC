@@ -153,7 +153,7 @@ int get_ai_pin_value(int pin, uint16_t *value)
 
 // ---------------------------------------------- misc -------------------------
 
-void die(uint8_t reason)
+void die(death_reason_t reason)
 {
 	PRINTS("\n\nDYING BECAUSE ");
 	PRINTU(reason);

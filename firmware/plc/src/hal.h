@@ -134,9 +134,9 @@ typedef enum {
 	DEATH_TASK_CREATION,
 	DEATH_CAN_DRIVER_ERROR,
 	DEATH_INITIALIZATION_TIMEOUT,
-} death_reasons_t;
+} death_reason_t;
 
-void die(uint8_t reason);
+void die(death_reason_t reason);
 
 void hal_restart(void);
 // overflows in ~49.7 days
