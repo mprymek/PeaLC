@@ -382,4 +382,28 @@ uint8_t uavcan_on_get_ais_req(const CanardNodeID remote_node_id,
 	return UAVCAN_GET_SET_RESULT_BAD_ARGUMENT;
 }
 
+// ---------------------------------------------- unused callbacks -------------
+
+void uavcan_on_set_dos_resp(const CanardNodeID remote_node_id,
+			    const uint8_t result, const uint8_t index)
+{
+}
+
+void uavcan_on_set_aos_resp(const CanardNodeID remote_node_id,
+			    const uint8_t result, const uint8_t index)
+{
+}
+
+void uavcan_on_get_dis_resp(const CanardNodeID remote_node_id,
+			    const uint8_t result, const uint8_t index,
+			    const uint8_t *const data, const uint8_t length)
+{
+}
+
+void uavcan_on_get_ais_resp(const CanardNodeID remote_node_id,
+			    const uint8_t result, const uint8_t index,
+			    const uint8_t *const data, const uint8_t length)
+{
+}
+
 #endif // #ifdef WITH_CAN
