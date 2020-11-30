@@ -162,11 +162,6 @@ void die(death_reason_t reason)
 		;
 }
 
-uint64_t hal_uptime_usec()
-{
-	return micros();
-}
-
 uint32_t hal_uptime_msec()
 {
 	return millis();

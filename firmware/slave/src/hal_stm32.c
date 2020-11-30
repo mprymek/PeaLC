@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include <core_cm3.h>
+#include <stm32yyxx_ll_cortex.h>
 
 #ifdef STM32F1
 #include <stm32f1xx_hal.h>
@@ -180,6 +181,24 @@ int can2_send(uint32_t id, const void *payload, size_t payload_len)
 	ui_can_tx();
 
 	return 0;
+}
+
+// ---------------------------------------------- misc -------------------------
+
+// Inspired by GetCurrentMicro()
+// from framework-arduinoststm32@3.10400.181126/STM32/cores/arduino/stm32/clock.c
+// Overflows in ~49.7days (overflow time of HAL_GetTick())
+uint64_t hal_uptime_usec()
+{
+	/* Ensure COUNTFLAG is reset by reading SysTick control and status register */
+	LL_SYSTICK_IsActiveCounterFlag();
+	uint32_t m = HAL_GetTick();
+	uint32_t u = SysTick->LOAD - SysTick->VAL;
+	if (LL_SYSTICK_IsActiveCounterFlag()) {
+		m = HAL_GetTick();
+		u = SysTick->LOAD - SysTick->VAL;
+	}
+	return (m * 1000ULL + (u * 1000ULL) / SysTick->LOAD);
 }
 
 #endif // #ifdef STM32
