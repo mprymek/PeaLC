@@ -184,7 +184,7 @@ echo("should be true: 35 >=", oz+tlz+blz);
 // common
 // -----------------------------------------------------------------------------
 
-module din_rail_clip(z = 6, spring_thickness=2) {
+module din_rail_clip(z = 6, spring_thickness=1.5) {
     a = 7;
     b = 1.2; // sheet thickness, should be ~ 1
     c = 2.5;
