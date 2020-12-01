@@ -2,65 +2,68 @@
 #include "gpio.h"
 #include "hal.h"
 
-int gpio_init_input_block(const io_block_t *block)
+int gpio_init_input_block(const io_type_t io_type, const io_block_t *block)
 {
 	gpio_io_block_t *data = block->driver_data;
 	int result;
 
-	if (block->values_type == IO_VALUES_BOOL) {
+	switch (io_type) {
+	case IO_TYPE_DIGITAL:
 		for (size_t i = 0; i < block->length; i++) {
 			log_debug("initializing DI pin %u", data->pins[i]);
 			if ((result = set_pin_mode_di(data->pins[i]))) {
 				return result;
 			}
 		}
-	} else if (block->values_type == IO_VALUES_UINT) {
+		break;
+	case IO_TYPE_ANALOG:
 		for (size_t i = 0; i < block->length; i++) {
 			log_debug("initializing AI pin %u", data->pins[i]);
 			if ((result = set_pin_mode_ai(data->pins[i]))) {
 				return result;
 			}
 		}
-	} else {
-		// TODO: ERROR
+		break;
 	}
 
 	return 0;
 }
 
-int gpio_init_output_block(const io_block_t *block)
+int gpio_init_output_block(const io_type_t io_type, const io_block_t *block)
 {
 	gpio_io_block_t *data = block->driver_data;
 	int result;
 
-	if (block->values_type == IO_VALUES_BOOL) {
+	switch (io_type) {
+	case IO_TYPE_DIGITAL:
 		for (size_t i = 0; i < block->length; i++) {
 			log_debug("initializing DO pin %u", data->pins[i]);
 			if ((result = set_pin_mode_do(data->pins[i]))) {
 				return result;
 			}
 		}
-	} else if (block->values_type == IO_VALUES_UINT) {
+		break;
+	case IO_TYPE_ANALOG:
 		for (size_t i = 0; i < block->length; i++) {
 			log_debug("initializing AO pin %u", data->pins[i]);
 			if ((result = set_pin_mode_ao(data->pins[i]))) {
 				return result;
 			}
 		}
-	} else {
-		// TODO: ERROR
+		break;
 	}
 
 	return 0;
 }
 
-int gpio_update_input_block(io_block_t *block)
+int gpio_update_input_block(const io_type_t io_type, io_block_t *block)
 {
 	gpio_io_block_t *data = block->driver_data;
 
 	uint8_t result;
 
-	if (block->values_type == IO_VALUES_BOOL) {
+	switch (io_type) {
+	case IO_TYPE_DIGITAL:
 		for (size_t i = 0; i < block->length; i++) {
 			if (true /* TODO: enabled? */) {
 				uint8_t pin = data->pins[i];
@@ -79,7 +82,8 @@ int gpio_update_input_block(io_block_t *block)
 				}
 			}
 		}
-	} else if (block->values_type == IO_VALUES_UINT) {
+		break;
+	case IO_TYPE_ANALOG:
 		for (size_t i = 0; i < block->length; i++) {
 			if (true /* TODO: enabled? */) {
 				uint8_t pin = data->pins[i];
@@ -96,15 +100,13 @@ int gpio_update_input_block(io_block_t *block)
 				}
 			}
 		}
-	} else {
-		log_error("invalid input block type!");
-		return IO_DOES_NOT_EXIST;
+		break;
 	}
 
 	return IO_OK;
 }
 
-int gpio_update_output_block(io_block_t *block)
+int gpio_update_output_block(const io_type_t io_type, io_block_t *block)
 {
 	gpio_io_block_t *data = block->driver_data;
 
@@ -114,7 +116,8 @@ int gpio_update_output_block(io_block_t *block)
 
 	uint8_t result;
 
-	if (block->values_type == IO_VALUES_BOOL) {
+	switch (io_type) {
+	case IO_TYPE_DIGITAL:
 		for (size_t i = 0; i < block->length; i++) {
 			if (true /* TODO: used */) {
 				uint8_t pin = data->pins[i];
@@ -128,7 +131,8 @@ int gpio_update_output_block(io_block_t *block)
 			}
 		}
 		block->dirty = false;
-	} else if (block->values_type == IO_VALUES_UINT) {
+		break;
+	case IO_TYPE_ANALOG:
 		for (size_t i = 0; i < block->length; i++) {
 			if (true /* TODO: used */) {
 				uint8_t pin = data->pins[i];
@@ -140,9 +144,7 @@ int gpio_update_output_block(io_block_t *block)
 			}
 		}
 		block->dirty = false;
-	} else {
-		log_error("invalid output block type!");
-		return IO_DOES_NOT_EXIST;
+		break;
 	}
 
 	return IO_OK;

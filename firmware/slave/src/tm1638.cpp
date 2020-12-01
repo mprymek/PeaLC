@@ -18,11 +18,11 @@ int tm1638_init()
 	return 0;
 }
 
-int tm1638_update_input_block(io_block_t *block)
+int tm1638_update_input_block(const io_type_t io_type, io_block_t *block)
 {
 	tm1638_io_block_t *data = (tm1638_io_block_t *)block->driver_data;
 
-	if ((block->values_type != IO_VALUES_BOOL) ||
+	if ((io_type != IO_TYPE_DIGITAL) ||
 	    (block->length + data->offset > 8)) {
 		return IO_DOES_NOT_EXIST;
 	}
@@ -41,11 +41,12 @@ int tm1638_update_input_block(io_block_t *block)
 	return IO_OK;
 }
 
-int tm1638_update_output_block(io_block_t *block)
+int tm1638_update_output_block(const io_type_t io_type, io_block_t *block)
 {
 	tm1638_io_block_t *data = (tm1638_io_block_t *)block->driver_data;
 
-	if (block->values_type == IO_VALUES_BOOL) {
+	switch (io_type) {
+	case IO_TYPE_DIGITAL:
 		if (block->length + data->offset > 8) {
 			return IO_DOES_NOT_EXIST;
 		}
@@ -55,7 +56,7 @@ int tm1638_update_output_block(io_block_t *block)
 		}
 		block->dirty = false;
 		return IO_OK;
-	} else if (block->values_type == IO_VALUES_UINT) {
+	case IO_TYPE_ANALOG:
 		if (block->length > 1) {
 			return IO_DOES_NOT_EXIST;
 		}
@@ -64,7 +65,6 @@ int tm1638_update_output_block(io_block_t *block)
 		block->dirty = false;
 		return IO_OK;
 	}
-
 	return IO_DOES_NOT_EXIST;
 }
 

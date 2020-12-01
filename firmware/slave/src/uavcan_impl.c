@@ -105,7 +105,7 @@ uint8_t uavcan_on_set_dos_req(const CanardNodeID remote_node_id,
 #endif
 		}
 		block->dirty = true;
-		if ((result = update_output_block(block)) != IO_OK) {
+		if ((result = update_output_block(IO_TYPE_DIGITAL, block)) != IO_OK) {
 			break;
 		}
 
@@ -185,7 +185,7 @@ uint8_t uavcan_on_set_aos_req(const CanardNodeID remote_node_id,
 #endif
 		}
 		block->dirty = true;
-		if ((result = update_output_block(block)) != IO_OK) {
+		if ((result = update_output_block(IO_TYPE_ANALOG, block)) != IO_OK) {
 			break;
 		}
 
@@ -255,7 +255,8 @@ uint8_t uavcan_on_get_dis_req(const CanardNodeID remote_node_id,
 		PRINTS("]");
 #endif
 
-		if ((result = update_input_block(block)) != IO_OK) {
+		log_error(" DIB:%u(%p) ", block->driver_type, block);
+		if ((result = update_input_block(IO_TYPE_DIGITAL, block)) != IO_OK) {
 			break;
 		}
 
@@ -337,7 +338,7 @@ uint8_t uavcan_on_get_ais_req(const CanardNodeID remote_node_id,
 		PRINTS("]");
 #endif
 
-		if ((result = update_input_block(block)) != IO_OK) {
+		if ((result = update_input_block(IO_TYPE_ANALOG, block)) != IO_OK) {
 			break;
 		}
 

@@ -22,13 +22,12 @@ typedef enum {
 } io_driver_type_t;
 
 typedef enum {
-	IO_VALUES_BOOL,
-	IO_VALUES_UINT,
-} io_values_type_t;
+	IO_TYPE_DIGITAL,
+	IO_TYPE_ANALOG,
+} io_type_t;
 
 typedef struct {
 	const io_driver_type_t driver_type;
-	const io_values_type_t values_type;
 	bool enabled;
 	bool dirty;
 	const size_t length;

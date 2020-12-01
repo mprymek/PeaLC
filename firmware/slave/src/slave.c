@@ -33,7 +33,7 @@ static void init_io()
 			  block->length);
 		block->enabled = true;
 		if (block->driver_type == IO_DRIVER_GPIO) {
-			gpio_init_input_block(block);
+			gpio_init_input_block(IO_TYPE_DIGITAL, block);
 		}
 		addr += block->length;
 	}
@@ -46,7 +46,7 @@ static void init_io()
 			  block->length);
 		block->enabled = true;
 		if (block->driver_type == IO_DRIVER_GPIO) {
-			gpio_init_output_block(block);
+			gpio_init_output_block(IO_TYPE_DIGITAL, block);
 		}
 		addr += block->length;
 	}
@@ -59,7 +59,7 @@ static void init_io()
 			  block->length);
 		block->enabled = true;
 		if (block->driver_type == IO_DRIVER_GPIO) {
-			gpio_init_input_block(block);
+			gpio_init_input_block(IO_TYPE_ANALOG, block);
 		}
 		addr += block->length;
 	}
@@ -72,20 +72,20 @@ static void init_io()
 			  block->length);
 		block->enabled = true;
 		if (block->driver_type == IO_DRIVER_GPIO) {
-			gpio_init_output_block(block);
+			gpio_init_output_block(IO_TYPE_ANALOG, block);
 		}
 		addr += block->length;
 	}
 }
 
-int update_input_block(io_block_t *block)
+int update_input_block(const io_type_t io_type, io_block_t *block)
 {
 	switch (block->driver_type) {
 	case IO_DRIVER_GPIO:
-		return gpio_update_input_block(block);
+		return gpio_update_input_block(io_type, block);
 #ifdef WITH_TM1638
 	case IO_DRIVER_TM1638:
-		return tm1638_update_input_block(block);
+		return tm1638_update_input_block(io_type, block);
 #endif
 	case IO_DRIVER_UAVCAN:
 		/* not used in slave */;
@@ -94,14 +94,14 @@ int update_input_block(io_block_t *block)
 	return IO_OK;
 }
 
-int update_output_block(io_block_t *block)
+int update_output_block(const io_type_t io_type, io_block_t *block)
 {
 	switch (block->driver_type) {
 	case IO_DRIVER_GPIO:
-		return gpio_update_output_block(block);
+		return gpio_update_output_block(io_type, block);
 #ifdef WITH_TM1638
 	case IO_DRIVER_TM1638:
-		return tm1638_update_output_block(block);
+		return tm1638_update_output_block(io_type, block);
 #endif
 	case IO_DRIVER_UAVCAN:
 		/* not used in slave */;
@@ -112,7 +112,7 @@ int update_output_block(io_block_t *block)
 
 #define GPIO_DIGITAL2(_inverted, ...)                                          \
 	{                                                                      \
-		.driver_type = IO_DRIVER_GPIO, .values_type = IO_VALUES_BOOL,  \
+		.driver_type = IO_DRIVER_GPIO,                                 \
 		.length = ARGS_NUM(__VA_ARGS__),                               \
 		.buff = (bool[ARGS_NUM(__VA_ARGS__)]){},                       \
 		.driver_data = &(gpio_io_block_t){                             \
@@ -126,7 +126,7 @@ int update_output_block(io_block_t *block)
 
 #define GPIO_ANALOG(...)                                                       \
 	{                                                                      \
-		.driver_type = IO_DRIVER_GPIO, .values_type = IO_VALUES_UINT,  \
+		.driver_type = IO_DRIVER_GPIO,                                 \
 		.length = ARGS_NUM(__VA_ARGS__),                               \
 		.buff = (uint16_t[ARGS_NUM(__VA_ARGS__)]){},                   \
 		.driver_data = &(gpio_io_block_t){                             \
@@ -137,8 +137,7 @@ int update_output_block(io_block_t *block)
 #ifdef WITH_TM1638
 #define TM1638_ANALOG                                                          \
 	{                                                                      \
-		.driver_type = IO_DRIVER_TM1638,                               \
-		.values_type = IO_VALUES_UINT, .length = 1,                    \
+		.driver_type = IO_DRIVER_TM1638, .length = 1,                  \
 		.buff = (uint16_t[1])                                          \
 		{                                                              \
 		}                                                              \
@@ -146,8 +145,7 @@ int update_output_block(io_block_t *block)
 
 #define TM1638_DIGITAL(_offset, _length)                                       \
 	{                                                                      \
-		.driver_type = IO_DRIVER_TM1638,                               \
-		.values_type = IO_VALUES_BOOL, .length = _length,              \
+		.driver_type = IO_DRIVER_TM1638, .length = _length,            \
 		.buff = (uint16_t[_length]){},                                 \
 		.driver_data = &(tm1638_io_block_t){ .offset = _offset },      \
 	}

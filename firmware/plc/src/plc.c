@@ -20,8 +20,8 @@ static void update_time(void);
 static void plc_run(void);
 static void update_outputs(void);
 static void update_inputs(void);
-static int update_input_block(io_block_t *block);
-static int update_output_block(io_block_t *block);
+static int update_input_block(const io_type_t io_type, io_block_t *block);
+static int update_output_block(const io_type_t io_type, io_block_t *block);
 
 static TaskHandle_t plc_task_h = NULL;
 static uint64_t tick = 0;
@@ -206,7 +206,7 @@ void init_buffers()
 			  block->length, enabled);
 		if (enabled) {
 			if (block->driver_type == IO_DRIVER_GPIO) {
-				gpio_init_input_block(block);
+				gpio_init_input_block(IO_TYPE_DIGITAL, block);
 			}
 		}
 		addr += block->length;
@@ -230,7 +230,7 @@ void init_buffers()
 			  block->length, enabled);
 		if (enabled) {
 			if (block->driver_type == IO_DRIVER_GPIO) {
-				gpio_init_input_block(block);
+				gpio_init_input_block(IO_TYPE_ANALOG, block);
 			}
 		}
 		addr += block->length;
@@ -255,7 +255,7 @@ void init_buffers()
 			  block->length, enabled);
 		if (enabled) {
 			if (block->driver_type == IO_DRIVER_GPIO) {
-				gpio_init_output_block(block);
+				gpio_init_output_block(IO_TYPE_DIGITAL, block);
 			}
 		}
 		addr += block->length;
@@ -279,7 +279,7 @@ void init_buffers()
 			  block->length, enabled);
 		if (enabled) {
 			if (block->driver_type == IO_DRIVER_GPIO) {
-				gpio_init_output_block(block);
+				gpio_init_output_block(IO_TYPE_ANALOG, block);
 			}
 		}
 		addr += block->length;
@@ -290,7 +290,7 @@ void init_buffers()
 
 #define GPIO_DIGITAL2(_inverted, ...)                                          \
 	{                                                                      \
-		.driver_type = IO_DRIVER_GPIO, .values_type = IO_VALUES_BOOL,  \
+		.driver_type = IO_DRIVER_GPIO,                                 \
 		.length = ARGS_NUM(__VA_ARGS__),                               \
 		.buff = (bool[ARGS_NUM(__VA_ARGS__)]){},                       \
 		.driver_data = &(gpio_io_block_t){                             \
@@ -304,7 +304,7 @@ void init_buffers()
 
 #define GPIO_ANALOG(...)                                                       \
 	{                                                                      \
-		.driver_type = IO_DRIVER_GPIO, .values_type = IO_VALUES_UINT,  \
+		.driver_type = IO_DRIVER_GPIO,                                 \
 		.length = ARGS_NUM(__VA_ARGS__),                               \
 		.buff = (uint16_t[ARGS_NUM(__VA_ARGS__)]){},                   \
 		.driver_data = &(gpio_io_block_t){                             \
@@ -314,8 +314,7 @@ void init_buffers()
 
 #define UAVCAN_DIGITAL(_node_id, _index, _length)                              \
 	{                                                                      \
-		.driver_type = IO_DRIVER_UAVCAN,                               \
-		.values_type = IO_VALUES_BOOL, .length = _length,              \
+		.driver_type = IO_DRIVER_UAVCAN, .length = _length,            \
 		.buff = (bool[_length]){},                                     \
 		.driver_data = &(uavcan_io_block_t){                           \
 			.node_id = _node_id,                                   \
@@ -325,8 +324,7 @@ void init_buffers()
 
 #define UAVCAN_ANALOG(_node_id, _index, _length)                               \
 	{                                                                      \
-		.driver_type = IO_DRIVER_UAVCAN,                               \
-		.values_type = IO_VALUES_UINT, .length = _length,              \
+		.driver_type = IO_DRIVER_UAVCAN, .length = _length,            \
 		.buff = (uint16_t[_length]){},                                 \
 		.driver_data = &(uavcan_io_block_t){                           \
 			.node_id = _node_id,                                   \
@@ -336,8 +334,7 @@ void init_buffers()
 
 #define SPARKPLUG_DIGITAL(_metric)                                             \
 	{                                                                      \
-		.driver_type = IO_DRIVER_SPARKPLUG,                            \
-		.values_type = IO_VALUES_BOOL, .length = 1,                    \
+		.driver_type = IO_DRIVER_SPARKPLUG, .length = 1,               \
 		.buff = (bool[1]){},                                           \
 		.driver_data = &(sp_io_block_t){                               \
 			.metric = _metric,                                     \
@@ -346,8 +343,7 @@ void init_buffers()
 
 #define SPARKPLUG_ANALOG(_metric)                                              \
 	{                                                                      \
-		.driver_type = IO_DRIVER_SPARKPLUG,                            \
-		.values_type = IO_VALUES_UINT, .length = 1,                    \
+		.driver_type = IO_DRIVER_SPARKPLUG, .length = 1,               \
 		.buff = (uint16_t[1]){},                                       \
 		.driver_data = &(sp_io_block_t){                               \
 			.metric = _metric,                                     \
@@ -391,7 +387,7 @@ void update_inputs()
 	for (size_t bi = 0; bi < digital_inputs_blocks_len; bi++) {
 		io_block_t *block = &digital_inputs_blocks[bi];
 		if (block->enabled) {
-			update_input_block(block);
+			update_input_block(IO_TYPE_DIGITAL, block);
 			if (block->dirty) {
 				for (size_t ai = 0; ai < block->length; ai++) {
 					IEC_BOOL *value =
@@ -417,7 +413,7 @@ void update_inputs()
 	for (size_t bi = 0; bi < analog_inputs_blocks_len; bi++) {
 		io_block_t *block = &analog_inputs_blocks[bi];
 		if (block->enabled) {
-			update_input_block(block);
+			update_input_block(IO_TYPE_ANALOG, block);
 			if (block->dirty) {
 				for (size_t ai = 0; ai < block->length; ai++) {
 					IEC_UINT *value = int_input[addr + ai];
@@ -459,11 +455,11 @@ void update_outputs()
 					}
 				}
 			}
-			update_output_block(block);
+			update_output_block(IO_TYPE_DIGITAL, block);
 		}
-
 		addr += block->length;
 	}
+
 	log_debug("updating analog outputs");
 	addr = 0;
 	for (size_t bi = 0; bi < analog_outputs_blocks_len; bi++) {
@@ -483,17 +479,18 @@ void update_outputs()
 					}
 				}
 			}
-			update_output_block(block);
+			update_output_block(IO_TYPE_ANALOG, block);
 		}
 		addr += block->length;
 	}
 }
 
-static int update_input_block(io_block_t *block)
+// Most of the drivers update buffers asynchronously - no action needed here.
+static int update_input_block(const io_type_t io_type, io_block_t *block)
 {
 	switch (block->driver_type) {
 	case IO_DRIVER_GPIO:
-		return gpio_update_input_block(block);
+		return gpio_update_input_block(io_type, block);
 	case IO_DRIVER_SPARKPLUG:
 	case IO_DRIVER_UAVCAN:
 		/* noop */;
@@ -502,13 +499,13 @@ static int update_input_block(io_block_t *block)
 	return IO_OK;
 }
 
-static int update_output_block(io_block_t *block)
+static int update_output_block(const io_type_t io_type, io_block_t *block)
 {
 	switch (block->driver_type) {
 	case IO_DRIVER_GPIO:
-		return gpio_update_output_block(block);
+		return gpio_update_output_block(io_type, block);
 	case IO_DRIVER_SPARKPLUG:
-		return sp_update_output_block(block);
+		return sp_update_output_block(io_type, block);
 	case IO_DRIVER_UAVCAN:
 		/* noop */;
 	}
