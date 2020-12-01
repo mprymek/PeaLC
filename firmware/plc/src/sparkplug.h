@@ -41,7 +41,7 @@ enum { SP_DT_UINT16 = 6,
 };
 
 int sp_init();
-int sp_update_output_block(io_block_t *block);
+int sp_update_output_block(const io_type_t io_type, io_block_t *const block);
 void sp_send_nbirth();
 
 // TODO: should not be needed

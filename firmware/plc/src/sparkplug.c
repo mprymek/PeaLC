@@ -98,7 +98,7 @@ int sp_init()
 	return 0;
 }
 
-int sp_update_output_block(io_block_t *block)
+int sp_update_output_block(const io_type_t io_type, io_block_t *const block)
 {
 	sp_io_block_t *data = block->driver_data;
 
@@ -108,7 +108,8 @@ int sp_update_output_block(io_block_t *block)
 
 	uint8_t result;
 
-	if (block->values_type == IO_VALUES_BOOL) {
+	switch (io_type) {
+	case IO_TYPE_DIGITAL:
 		for (size_t i = 0; i < block->length; i++) {
 			bool *value = &((bool *)block->buff)[i];
 			metric_simple_t metric = {
@@ -119,7 +120,8 @@ int sp_update_output_block(io_block_t *block)
 			sp_send_metric_simple(&metric, SP_TOPIC_NODE("NDATA"));
 		}
 		block->dirty = false;
-	} else if (block->values_type == IO_VALUES_UINT) {
+		break;
+	case IO_TYPE_ANALOG:
 		for (size_t i = 0; i < block->length; i++) {
 			uint16_t *value = &((uint16_t *)block->buff)[i];
 			metric_simple_t metric = {
@@ -130,9 +132,7 @@ int sp_update_output_block(io_block_t *block)
 			sp_send_metric_simple(&metric, SP_TOPIC_NODE("NDATA"));
 		}
 		block->dirty = false;
-	} else {
-		log_error("invalid output block type!");
-		return IO_DOES_NOT_EXIST;
+		break;
 	}
 
 	return IO_OK;
@@ -162,56 +162,57 @@ void sp_handle_set_metric(const char *metric_name, uint64_t alias,
 		return;
 	}
 
-	size_t addr = 0;
 	log_debug("-> SP(%s) = %u", metric_name, value);
 	for (size_t bi = 0; bi < digital_inputs_blocks_len; bi++) {
 		io_block_t *block = &digital_inputs_blocks[bi];
 
-		if (block->driver_type == IO_DRIVER_SPARKPLUG) {
-			sp_io_block_t *data = block->driver_data;
-
-			if (!strcmp(metric_name, data->metric)) {
-				if (block->values_type == IO_VALUES_BOOL) {
-					bool *buff_value =
-						&((bool *)block->buff)[0];
-					if (value != *buff_value) {
-						*buff_value = value;
-						block->dirty = true;
-					}
-					// send confirmation
-					bool value2 = value;
-					metric_simple_t metric = {
-						.datatype = SP_DT_BOOLEAN,
-						.name = metric_name,
-						.value = &value2,
-					};
-					sp_send_metric_simple(
-						&metric,
-						SP_TOPIC_NODE("NDATA"));
-				} else if (block->values_type ==
-					   IO_VALUES_UINT) {
-					uint16_t *buff_value =
-						&((uint16_t *)block->buff)[0];
-					if (value != *buff_value) {
-						*buff_value = value;
-						block->dirty = true;
-					}
-					// send confirmation
-					uint16_t value2 = value;
-					metric_simple_t metric = {
-						.datatype = SP_DT_UINT16,
-						.name = metric_name,
-						.value = &value2,
-					};
-					sp_send_metric_simple(
-						&metric,
-						SP_TOPIC_NODE("NDATA"));
-				}
-				return;
-			}
+		if (block->driver_type != IO_DRIVER_SPARKPLUG) {
+			continue;
 		}
 
-		addr += block->length;
+		sp_io_block_t *data = block->driver_data;
+		if (!strcmp(metric_name, data->metric)) {
+			bool *buff_value = &((bool *)block->buff)[0];
+			if (value != *buff_value) {
+				*buff_value = value;
+				block->dirty = true;
+			}
+			// send confirmation
+			bool value2 = value;
+			metric_simple_t metric = {
+				.datatype = SP_DT_BOOLEAN,
+				.name = metric_name,
+				.value = &value2,
+			};
+			sp_send_metric_simple(&metric, SP_TOPIC_NODE("NDATA"));
+			return;
+		}
+	}
+
+	for (size_t bi = 0; bi < analog_inputs_blocks_len; bi++) {
+		io_block_t *block = &analog_inputs_blocks[bi];
+
+		if (block->driver_type != IO_DRIVER_SPARKPLUG) {
+			continue;
+		}
+
+		sp_io_block_t *data = block->driver_data;
+		if (!strcmp(metric_name, data->metric)) {
+			uint16_t *buff_value = &((uint16_t *)block->buff)[0];
+			if (value != *buff_value) {
+				*buff_value = value;
+				block->dirty = true;
+			}
+			// send confirmation
+			uint16_t value2 = value;
+			metric_simple_t metric = {
+				.datatype = SP_DT_UINT16,
+				.name = metric_name,
+				.value = &value2,
+			};
+			sp_send_metric_simple(&metric, SP_TOPIC_NODE("NDATA"));
+		}
+		return;
 	}
 }
 
