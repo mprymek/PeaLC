@@ -427,11 +427,19 @@ int sp_device_dead(const char *device)
 static bool metric_name_decode(pb_istream_t *istream, const pb_field_t *field,
 			       void **arg)
 {
-	if (istream->bytes_left > METRIC_NAME_MAX) {
+	size_t len = istream->bytes_left;
+	if (len > METRIC_NAME_MAX) {
 		PRINTF("ERROR: metric name too long\n");
 		return false;
 	}
-	return pb_read(istream, (uint8_t *)*arg, istream->bytes_left);
+	bool result;
+	uint8_t * metric_name = *arg;
+	if((result = pb_read(istream, metric_name, len))) {
+		metric_name[len] = 0;
+	} else {
+		metric_name[0] = 0;
+	}
+	return result;
 }
 
 // TODO: This is probably completely wrong. Should be just a decoder, not callback!
@@ -442,8 +450,6 @@ static bool metric_decode(pb_istream_t *istream, const pb_field_t *field,
 	char metric_name[METRIC_NAME_MAX + 1];
 	org_eclipse_tahu_protobuf_Payload_Metric metric =
 		org_eclipse_tahu_protobuf_Payload_Metric_init_default;
-	// TODO string is not zero-ended!
-	memset(metric_name, 0, METRIC_NAME_MAX + 1);
 	metric.name.funcs.decode = metric_name_decode;
 	metric.name.arg = &metric_name;
 	if (!pb_decode(istream, org_eclipse_tahu_protobuf_Payload_Metric_fields,
@@ -451,7 +457,13 @@ static bool metric_decode(pb_istream_t *istream, const pb_field_t *field,
 		PRINTF("ERROR: protobuf msg decoding\n");
 		return false;
 	}
-	PRINTF("SP CMD: alias %llu = ", metric.alias);
+
+	PRINTF("-> SP: %s ", metric_name);
+	if(metric.alias) {
+		PRINTF("(%llu) ", metric.alias);
+	}
+	PRINTF("= ");
+
 	switch (metric.which_value) {
 	case org_eclipse_tahu_protobuf_Payload_Metric_int_value_tag:
 		PRINTF("%u\n", metric.value.int_value);
