@@ -436,27 +436,23 @@ static bool is_topic(esp_mqtt_event_handle_t event, const char *topic,
 
 static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 {
-	static int8_t subscription_counter;
+	static int8_t subscription_counter = 0;
 	esp_mqtt_client_handle_t client = event->client;
 	switch (event->event_id) {
 	case MQTT_EVENT_CONNECTED:
 #ifdef WITH_SPARKPLUG
-		subscription_counter = 3;
-		// TODO: move somewhere else?
+		subscription_counter += 2;
 		esp_mqtt_client_subscribe(client, SP_TOPIC_NODE("NCMD"), 0);
 		esp_mqtt_client_subscribe(client, SP_TOPIC_DEVICE("+", "DCMD"),
 					  0);
-		esp_mqtt_client_subscribe(client,
-					  "spBv1.0/hsh/DDATA/NodeRED/clock", 0);
 #else
 		mqtt_publish5(MQTT_STATUS_TOPIC, MQTT_STATUS_STARTING_MSG, 0, 1,
 			      1);
 #ifdef MQTT_WALL_CLOCK_TOPIC
-		subscription_counter = 2;
+		subscription_counter += 1;
 		esp_mqtt_client_subscribe(client, MQTT_WALL_CLOCK_TOPIC, 0);
-#else
-		subscription_counter = 1;
 #endif // ifdef MQTT_WALL_CLOCK_TOPIC
+		subscription_counter += 1;
 		esp_mqtt_client_subscribe(client, MQTT_SUBTOPIC("#"), 1);
 #endif // ifdef WITH_SPARKPLUG
 		break;

@@ -245,17 +245,6 @@ void sp_send_nbirth()
 	// A NBIRTH message must always contain a sequence number of zero.
 	seq = 0;
 	sp_send_xbirth(node_metrics, node_metrics_num, SP_TOPIC_NODE("NBIRTH"));
-
-	// TODO,RBF: send CAN/rebirth
-	/*
-	extern bool farm_alive;
-	if (farm_alive) {
-		sp_send_xbirth(farm_metrics, farm_metrics_num,
-			       SP_TOPIC_DEVICE("farm", "DBIRTH"));
-	}
-	*/
-	//sp_send_xbirth(desk_metrics, desk_metrics_num,
-	//	       SP_TOPIC_DEVICE("desk", "DBIRTH"));
 }
 
 static int sp_send_xbirth(const metric_simple_t *metrics, uint8_t metrics_num,
@@ -285,6 +274,9 @@ static int sp_send_xbirth(const metric_simple_t *metrics, uint8_t metrics_num,
 
 static uint64_t sp_now()
 {
+	if (start_time_ms == 0) {
+		return 0;
+	}
 	return (hal_uptime_usec() / 1000) + start_time_ms;
 }
 
@@ -309,11 +301,11 @@ static bool encode_simple_metrics(pb_ostream_t *ostream,
 		org_eclipse_tahu_protobuf_Payload_Metric metric =
 			org_eclipse_tahu_protobuf_Payload_Metric_init_default;
 		// RBF: test if timestamp is sane (TODO: birth only after clock is synchronized)
-		if (arg->timestamp > 1000000) {
+		if (arg->timestamp == 0) {
+			metric.has_timestamp = false;
+		} else {
 			metric.has_timestamp = true;
 			metric.timestamp = arg->timestamp;
-		} else {
-			metric.has_timestamp = false;
 		}
 		metric.has_datatype = true;
 		metric.datatype = smetric->datatype;
@@ -367,11 +359,11 @@ encode_payload_simple_metrics(pb_ostream_t *ostream,
 		org_eclipse_tahu_protobuf_Payload_init_default;
 
 	// RBF: test if timestamp is sane (TODO: birth only after clock is synchronized)
-	if (arg->timestamp > 1000000) {
+	if (arg->timestamp == 0) {
+		payload.has_timestamp = false;
+	} else {
 		payload.has_timestamp = true;
 		payload.timestamp = arg->timestamp;
-	} else {
-		payload.has_timestamp = false;
 	}
 	payload.metrics.funcs.encode = encode_simple_metrics;
 	payload.metrics.arg = (void *)arg;
@@ -492,48 +484,6 @@ int sp_mqtt_on_message(esp_mqtt_event_handle_t event)
 			       org_eclipse_tahu_protobuf_Payload_fields,
 			       &payload)) {
 			PRINTF("ERROR: protobuf msg decoding failed\n");
-		}
-		return true;
-	}
-
-#if 0
-	if (strncmp(event->topic, SP_TOPIC_DEVICE("desk", "DCMD"),
-		    event->topic_len) == 0) {
-		org_eclipse_tahu_protobuf_Payload payload =
-			org_eclipse_tahu_protobuf_Payload_init_default;
-		payload.metrics.funcs.decode = metric_decode;
-		// TODO: device name to args
-		pb_istream_t istream = pb_istream_from_buffer(
-			(pb_byte_t *)event->data, event->data_len);
-		if (!pb_decode(&istream,
-			       org_eclipse_tahu_protobuf_Payload_fields,
-			       &payload)) {
-			PRINTF("ERROR: protobuf msg decoding failed\n");
-		}
-		return true;
-	}
-#endif
-
-	// clock topic
-	// RBF
-	if (strncmp(event->topic, "spBv1.0/hsh/DDATA/NodeRED/clock",
-		    event->topic_len) == 0) {
-		org_eclipse_tahu_protobuf_Payload payload =
-			org_eclipse_tahu_protobuf_Payload_init_default;
-		pb_istream_t istream = pb_istream_from_buffer(
-			(pb_byte_t *)event->data, event->data_len);
-		if (!pb_decode(&istream,
-			       org_eclipse_tahu_protobuf_Payload_fields,
-			       &payload)) {
-			PRINTF("ERROR: protobuf msg decoding failed\n");
-		}
-		// TODO: better time sync
-		if (start_time_ms == 0 && payload.has_timestamp) {
-			printf("pt = %llu huu = %llu\n", payload.timestamp,
-			       hal_uptime_usec() / 1000);
-			start_time_ms =
-				payload.timestamp - (hal_uptime_usec() / 1000);
-			printf("start_time_ms = %llu\n", start_time_ms);
 		}
 		return true;
 	}
