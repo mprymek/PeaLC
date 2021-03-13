@@ -1,3 +1,8 @@
+```diff
+- THIS IS AN EXPERIMENTAL BRANCH! The code here may not compile, branch can be
+- force-pushed or dragons can eat your lunch! Don't assume anything about this branch!
+```
+
 ![PeaLC logo](./doc/img/logo.png)
 
 PeaLC's main purpose is to be the lowest-possible-barrier entry point into
