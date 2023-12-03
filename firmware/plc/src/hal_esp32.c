@@ -7,11 +7,11 @@
 // NOTE: FreeRTOS headers must be included before `driver/can.h`
 #include <freertos/FreeRTOS.h>
 #include <driver/gpio.h>
-#include <driver/can.h>
+#include <driver/twai.h>
 #include <esp_wifi.h>
 #include <esp_system.h>
 #include <nvs_flash.h>
-#include <esp_event_loop.h>
+#include <esp_event.h>
 #include <mqtt_client.h>
 
 #include "app_config.h"
@@ -141,27 +141,28 @@ int can2_init()
 {
 	//Initialize configuration structures using macro initializers
 	// tx, rx pins
-	can_general_config_t g_config = CAN_GENERAL_CONFIG_DEFAULT(
-		CAN_TX_PIN, CAN_RX_PIN, CAN_MODE_NORMAL);
-	can_timing_config_t t_config = CAN_TIMING_CONFIG_250KBITS();
-	can_filter_config_t f_config = CAN_FILTER_CONFIG_ACCEPT_ALL();
+	twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(
+		CAN_TX_PIN, CAN_RX_PIN, TWAI_MODE_NORMAL);
+	twai_timing_config_t t_config = TWAI_TIMING_CONFIG_250KBITS();
+	twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 
 	//Install CAN driver
-	if (!can_driver_install(&g_config, &t_config, &f_config) == ESP_OK) {
+	if (!twai_driver_install(&g_config, &t_config, &f_config) == ESP_OK) {
 		log_error("Failed to install CAN driver");
 		return -1;
 	}
 
 	// Reconfigure alerts to detect Error Passive and Bus-Off error states
 	uint32_t alerts_to_enable =
-		CAN_ALERT_ALL & (~(CAN_ALERT_TX_IDLE | CAN_ALERT_TX_SUCCESS));
-	if (!can_reconfigure_alerts(alerts_to_enable, NULL) == ESP_OK) {
+		TWAI_ALERT_ALL &
+		(~(TWAI_ALERT_TX_IDLE | TWAI_ALERT_TX_SUCCESS));
+	if (!twai_reconfigure_alerts(alerts_to_enable, NULL) == ESP_OK) {
 		log_error("Failed to reconfigure alerts");
 		return -2;
 	}
 
 	// Start CAN driver
-	if (can_start() != ESP_OK) {
+	if (twai_start() != ESP_OK) {
 		log_error("Failed to start driver");
 		return -3;
 	}
@@ -182,55 +183,55 @@ static void can_watch_task(void *pvParameters)
 	uint32_t alerts;
 
 	for (;;) {
-		can_read_alerts(&alerts, 0);
+		twai_read_alerts(&alerts, 0);
 		if (alerts != 0) {
-			if (alerts & CAN_ALERT_BELOW_ERR_WARN) {
+			if (alerts & TWAI_ALERT_BELOW_ERR_WARN) {
 				log_info("CAN: below error warning limit");
 			}
-			if (alerts & CAN_ALERT_ERR_ACTIVE) {
+			if (alerts & TWAI_ALERT_ERR_ACTIVE) {
 				log_warning("CAN: entered error active state");
 				can_bus_state = CANBS_ERR_ACTIVE;
 			}
-			if (alerts & CAN_ALERT_RECOVERY_IN_PROGRESS) {
+			if (alerts & TWAI_ALERT_RECOVERY_IN_PROGRESS) {
 				log_warning("CAN: bus recovery in progress");
 			}
-			if (alerts & CAN_ALERT_BUS_RECOVERED) {
+			if (alerts & TWAI_ALERT_BUS_RECOVERED) {
 				// NOTE: bus is "recovered" even when in fact there's still error on the bus
 				log_info("CAN: bus recovered");
 				// After recovery, the driver enters stopped state - we must start
 				// it again.
 				// See https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/can.html#driver-operation
-				if (can_start() != ESP_OK) {
+				if (twai_start() != ESP_OK) {
 					log_error(
 						"CAN: failed to start driver");
 					die(DEATH_CAN_DRIVER_ERROR);
 				}
 			}
-			if (alerts & CAN_ALERT_ARB_LOST) {
+			if (alerts & TWAI_ALERT_ARB_LOST) {
 				log_debug("CAN: arbitration lost");
 			}
-			if (alerts & CAN_ALERT_ABOVE_ERR_WARN) {
+			if (alerts & TWAI_ALERT_ABOVE_ERR_WARN) {
 				log_warning(
 					"CAN: surpassed error warning limit");
 			}
-			if (alerts & CAN_ALERT_BUS_ERROR) {
+			if (alerts & TWAI_ALERT_BUS_ERROR) {
 				log_error("CAN: bus error");
 			}
-			if (alerts & CAN_ALERT_TX_FAILED) {
+			if (alerts & TWAI_ALERT_TX_FAILED) {
 				log_error("CAN: TX failed");
 			}
-			if (alerts & CAN_ALERT_RX_QUEUE_FULL) {
+			if (alerts & TWAI_ALERT_RX_QUEUE_FULL) {
 				// UAVCAN is not fully functional until PLC is initialized
 				// => supress this message until then.
 				if (IS_BIT_SET(PLC_INITIALIZED_BIT)) {
 					log_error("CAN: RX queue full");
 				}
 			}
-			if (alerts & CAN_ALERT_ERR_PASS) {
+			if (alerts & TWAI_ALERT_ERR_PASS) {
 				log_error("CAN: entered error passive state");
 				can_bus_state = CANBS_ERR_PASSIVE;
 			}
-			if (alerts & CAN_ALERT_BUS_OFF) {
+			if (alerts & TWAI_ALERT_BUS_OFF) {
 				log_error("CAN: entered bus off state");
 				can_bus_state = CANBS_BUS_OFF;
 				for (int i = 3; i > 0; i--) {
@@ -239,7 +240,7 @@ static void can_watch_task(void *pvParameters)
 						i);
 					vTaskDelay(pdMS_TO_TICKS(1000));
 				}
-				can_initiate_recovery(); //Needs 128 occurrences of bus free signal
+				twai_initiate_recovery(); //Needs 128 occurrences of bus free signal
 				log_info("CAN: bus recovery initiated");
 			}
 		}
@@ -249,7 +250,7 @@ static void can_watch_task(void *pvParameters)
 
 int can2_send(uint32_t id, const void *payload, size_t payload_size)
 {
-	can_message_t esp_msg;
+	twai_message_t esp_msg;
 
 	if (payload_size > sizeof(esp_msg.data)) {
 		return -1;
@@ -258,9 +259,9 @@ int can2_send(uint32_t id, const void *payload, size_t payload_size)
 	esp_msg.identifier = id;
 	memcpy(esp_msg.data, payload, payload_size);
 	esp_msg.data_length_code = payload_size;
-	esp_msg.flags = CAN_MSG_FLAG_EXTD;
+	esp_msg.flags = TWAI_MSG_FLAG_EXTD;
 
-	if (can_transmit(&esp_msg, 0) != ESP_OK) {
+	if (twai_transmit(&esp_msg, 0) != ESP_OK) {
 		return -2;
 	}
 
@@ -271,13 +272,13 @@ int can2_send(uint32_t id, const void *payload, size_t payload_size)
 
 void can2_receive()
 {
-	can_message_t esp_msg;
+	twai_message_t esp_msg;
 
-	while (can_receive(&esp_msg, 0) == ESP_OK) {
+	while (twai_receive(&esp_msg, 0) == ESP_OK) {
 		uint32_t id = esp_msg.identifier;
 
 		// ignore not-extended-format messages
-		if (!(esp_msg.flags & CAN_MSG_FLAG_EXTD)) {
+		if (!(esp_msg.flags & TWAI_MSG_FLAG_EXTD)) {
 			return;
 		}
 
@@ -298,26 +299,39 @@ void can2_receive()
 
 #ifdef WITH_WIFI
 
-static esp_err_t wifi_event_handler(void *ctx, system_event_t *event);
+static void wifi_event_handler(void *arg, esp_event_base_t event_base,
+			       int32_t event_id, void *event_data);
 
 int wifi_init()
 {
 	RET_CHECK(nvs_flash_init(), "NVS init");
-	tcpip_adapter_init();
-	RET_CHECK(esp_event_loop_init(wifi_event_handler, NULL),
-		  "Wifi event loop creation");
+
+	RET_CHECK(esp_netif_init(), "netif_init");
+	RET_CHECK(esp_event_loop_create_default(), "Event loop");
+	esp_netif_create_default_wifi_sta();
+
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 	RET_CHECK(esp_wifi_init(&cfg), "Wifi init");
 	RET_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM),
 		  "esp_wifi_set_storage");
+
+	RET_CHECK(esp_event_handler_instance_register(
+			  WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler,
+			  NULL, NULL),
+		  "Wifi handler register");
+	RET_CHECK(esp_event_handler_instance_register(
+			  IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler,
+			  NULL, NULL),
+		  "IP handler register");
+
 	wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = WIFI_SSID,
-            .password = WIFI_PASSWD,
-        },
-    };
+		.sta = {
+			.ssid = WIFI_SSID,
+			.password = WIFI_PASSWD,
+		},
+	};
 	RET_CHECK(esp_wifi_set_mode(WIFI_MODE_STA), "esp_wifi_set_mode");
-	RET_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config),
+	RET_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config),
 		  "esp_wifi_set_config");
 	RET_CHECK(esp_wifi_start(), "esp_wifi_start");
 
@@ -328,27 +342,33 @@ int wifi_init()
 	return 0;
 }
 
-static esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
+static void wifi_event_handler(void *arg, esp_event_base_t event_base,
+			       int32_t event_id, void *event_data)
 {
-	switch (event->event_id) {
-	case SYSTEM_EVENT_STA_START:
-		esp_wifi_connect();
-		break;
-	case SYSTEM_EVENT_STA_GOT_IP:
-		ui_wifi_ok(true);
-		xEventGroupSetBits(global_event_group, WIFI_READY_BIT);
-		break;
-	case SYSTEM_EVENT_STA_DISCONNECTED:
-		ui_wifi_ok(false);
-		log_warning("wifi disconnected");
-		// TODO: check error
-		esp_wifi_connect();
-		xEventGroupClearBits(global_event_group, WIFI_READY_BIT);
-		break;
-	default:
-		break;
+	if (event_base == WIFI_EVENT) {
+		switch (event_id) {
+		case WIFI_EVENT_STA_START:
+			esp_wifi_connect();
+			break;
+		case WIFI_EVENT_STA_DISCONNECTED:
+			ui_wifi_ok(false);
+			log_warning("wifi disconnected");
+			// TODO: check error
+			esp_wifi_connect();
+			xEventGroupClearBits(global_event_group,
+					     WIFI_READY_BIT);
+			break;
+		default:
+			break;
+		}
+	} else if (event_base == IP_EVENT) {
+		switch (event_id) {
+		case IP_EVENT_STA_GOT_IP:
+			ui_wifi_ok(true);
+			xEventGroupSetBits(global_event_group, WIFI_READY_BIT);
+			break;
+		}
 	}
-	return ESP_OK;
 }
 
 #endif // ifdef WITH_WIFI
@@ -443,6 +463,8 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 		break;
 	case MQTT_EVENT_UNSUBSCRIBED:
 	case MQTT_EVENT_BEFORE_CONNECT:
+	case MQTT_EVENT_ANY:
+	case MQTT_EVENT_DELETED:
 		break;
 	}
 	return ESP_OK;

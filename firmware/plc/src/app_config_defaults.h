@@ -15,7 +15,7 @@
 #define UAVCAN_STATUS_PERIOD 1000
 
 // how often to run uavcan RX/TX [ms]
-#define UAVCAN_RXTX_PERIOD 1
+#define UAVCAN_RXTX_PERIOD 10
 
 #ifndef UAVCAN_MEM_POOL_SIZE
 #define UAVCAN_MEM_POOL_SIZE 2048
